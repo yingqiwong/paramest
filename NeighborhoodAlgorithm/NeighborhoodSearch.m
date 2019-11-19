@@ -2,7 +2,7 @@ function varargout = NeighborhoodSearch (varargin)
 [varargout{1:nargout}] = feval(varargin{:});
 end
 
-function [vReal, vNorm, dhat, L, Lmax, flag, RunTime] = main (...
+function [mReal, mNorm, dhat, L, Lmax, flag, RunTime] = main (...
     dhatFunc, LikeFunc, mbnds, mNames, NbrOpts, Ndata, varargin)
 % evaluates the neighborhood direct search algorithm from Sambridge 1999 I
 % assumes uniform prior - should this part allow different priors?
@@ -20,7 +20,7 @@ function [vReal, vNorm, dhat, L, Lmax, flag, RunTime] = main (...
 %           save      whether to save an output textfile of models
 %           filename  if (save), need to have a filename
 %           Parallel  if want to run models in parallel
-% Ndata     size of data vector
+% Ndata     number of datasets (for joint inversions)
 % varargin  any other input values for dhatFunc
 % 
 % OUTPUTS
@@ -52,27 +52,27 @@ VarVary     = find(BndsDiff>0);
 ns_adjusted = floor(Ns/Nr)*Nr;  % enforce that this is an integer
 
 % initialize matrices
-vNorm  = ones(Ns + ns_adjusted*Niter, Nvar);
-vReal  = vNorm;
-dhat   = nan*ones(Ns + ns_adjusted*Niter, Ndata);
+mNorm  = ones(Ns + ns_adjusted*Niter, Nvar);
+mReal  = mNorm;
+dhat   = cell(Ns + ns_adjusted*Niter, Ndata);
 L      = nan*ones(Ns + ns_adjusted*Niter, 1);
 Lmax   = nan*ones(1+Niter,1);
 flag   = L;
 RunTime= L;
 
 % randomly sample model space, but fix variables where upper = lower bounds
-vNorm(1:Ns,VarVary) = rand(Ns,length(VarVary));
+mNorm(1:Ns,VarVary) = rand(Ns,length(VarVary));
 
 fprintf('Generating initial %d random samples...\n', Ns);
-[vReal(1:Ns,:), dhat(1:Ns,:), flag(1:Ns), RunTime(1:Ns), L(1:Ns)] = RunForwardModel(...
-    dhatFunc, LikeFunc, vNorm(1:Ns,:), mbnds, Ns, Ndata, NumWorkers, varargin{:});
+[mReal(1:Ns,:), dhat(1:Ns,:), flag(1:Ns), RunTime(1:Ns), L(1:Ns)] = RunForwardModel(...
+    dhatFunc, LikeFunc, mNorm(1:Ns,:), mbnds, Ns, Ndata, NumWorkers, varargin{:});
 [inds, Lmax(1)] = Lsort(L(1:Ns));
 fprintf('Max log-likelihood = %.2e.\n', Lmax(1));
 fprintf('Finished generating initial random samples\n');
 
 if NbrOpts.save
     save(NbrOpts.filename, 'mNames', 'mbnds', 'NbrOpts', ...
-        'vNorm', 'vReal', 'dhat', 'L', 'Lmax', 'flag', 'RunTime'); 
+        'mNorm', 'mReal', 'dhat', 'L', 'Lmax', 'flag', 'RunTime'); 
 end
 
 % neighborhood sampling
@@ -83,24 +83,26 @@ for inr = 1:Niter
 %     keyboard
     
     vNew  = ones(ns_adjusted,Nvar);
-    vNew(:,VarVary) = NeighborhoodSampling(vNorm(1:vInd,VarVary), inds(1:Nr), Ns);
+    vNew(:,VarVary) = NeighborhoodSampling(mNorm(1:vInd,VarVary), inds(1:Nr), Ns);
 
     [vRealnew, dhatnew, flagnew, RunTimenew, Lnew] = RunForwardModel(...
         dhatFunc, LikeFunc, vNew, mbnds, ns_adjusted, Ndata, NumWorkers, varargin{:});
-    [inds, Lmax(1+inr)] = Lsort(L(1:(vInd+ns_adjusted)));
     
     % fill in matrices of models and misfits
-    vNorm(vInd+(1:ns_adjusted),:) = vNew;
-    vReal(vInd+(1:ns_adjusted),:) = vRealnew;
+    mNorm(vInd+(1:ns_adjusted),:) = vNew;
+    mReal(vInd+(1:ns_adjusted),:) = vRealnew;
     dhat(vInd+(1:ns_adjusted),:)  = dhatnew;
     flag(vInd+(1:ns_adjusted))    = flagnew;
     RunTime(vInd+(1:ns_adjusted)) = RunTimenew;
     L(vInd+(1:ns_adjusted))       = Lnew;
     
-    fprintf('Max log-likelihood = %.2e.\n', Lmax(inr+1));    
+    % find maximum likelihood
+    [inds, Lmax(1+inr)] = Lsort(L(1:(vInd+ns_adjusted)));
+    fprintf('Max log-likelihood = %.2e.\n', Lmax(inr+1));   
+    
     if NbrOpts.save
         save(NbrOpts.filename, 'mNames', 'mbnds', 'NbrOpts', ...
-            'vNorm', 'vReal', 'dhat', 'L', 'Lmax', 'flag', 'RunTime');
+            'mNorm', 'mReal', 'dhat', 'L', 'Lmax', 'flag', 'RunTime');
     end
 
 end
@@ -108,23 +110,23 @@ fprintf('Finished neighborhood sampling.\n');
 
 end
 
-function [vReal, dhat, flag, RunTime, L] = RunForwardModel (...
+function [mReal, dhat, flag, RunTime, L] = RunForwardModel (...
     dhatFunc, LikeFunc, vNorm, mbnds, Ns, Ndata, NumWorkers, varargin)
 % use this function after neighborhood sampling
 % transforms new normalized samples to real units and runs the forward
 % model and calculates likelihoods
 
-dhat    = nan*ones(Ns,Ndata);
+dhat    = cell(Ns,Ndata);
 flag    = nan*ones(Ns,1);
 RunTime = nan*ones(Ns,1);
 L       = nan*ones(Ns,1);
 
-vReal = TransformToRealUnits(vNorm, mbnds);
+mReal = TransformToRealUnits(vNorm, mbnds);
 
 parfor (ins = 1:Ns, NumWorkers)
     
     tic;
-    [dhatIter, flag(ins)] = dhatFunc(vReal(ins,:), varargin{:});    
+    [dhatIter, flag(ins)] = dhatFunc(mReal(ins,:), varargin{:});    
     RunTime(ins) = toc;
     
     if flag(ins)==1
@@ -143,11 +145,11 @@ function [inds, Lmax] = Lsort (L)
 Lmax     = L(inds(1));
 end
 
-function [vReal] = TransformToRealUnits (vNorm, bnds)
+function [mReal] = TransformToRealUnits (mNorm, bnds)
 % bnds: lower and upper bounds of variables (Nvars x 2)
 
 bnds  = bnds';
-vReal = bnds(1,:) + (bnds(2,:) - bnds(1,:)).*vNorm;
+mReal = bnds(1,:) + (bnds(2,:) - bnds(1,:)).*mNorm;
 
 end
 
