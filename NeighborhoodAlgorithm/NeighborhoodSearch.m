@@ -80,11 +80,11 @@ fprintf('Generating %d total samples for %d low misfit cells...\n', Ns, Nr);
 for inr = 1:Niter
     fprintf('Neighborhood sampling iteration %d of %d.\n', inr, Niter);
     vInd = Ns + (inr-1)*ns_adjusted;
-%     keyboard
     
+    % obtain new samples
     vNew  = ones(ns_adjusted,Nvar);
     vNew(:,VarVary) = NeighborhoodSampling(mNorm(1:vInd,VarVary), inds(1:Nr), Ns);
-
+    
     [vRealnew, dhatnew, flagnew, RunTimenew, Lnew] = RunForwardModel(...
         dhatFunc, LikeFunc, vNew, mbnds, ns_adjusted, Ndata, NumWorkers, varargin{:});
     
@@ -126,12 +126,12 @@ mReal = TransformToRealUnits(vNorm, mbnds);
 parfor (ins = 1:Ns, NumWorkers)
     
     tic;
-    [dhatIter, flag(ins)] = dhatFunc(mReal(ins,:), varargin{:});    
+    [dhatIter, flag(ins), Linputs] = dhatFunc(mReal(ins,:), varargin{:});    
     RunTime(ins) = toc;
     
     if flag(ins)==1
         dhat(ins,:) = dhatIter;
-        L(ins)      = LikeFunc(dhatIter); 
+        L(ins)      = LikeFunc(dhatIter, Linputs); 
     end  
 end
 
