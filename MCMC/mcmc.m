@@ -34,9 +34,9 @@ PriorFunc = fcnchk(PriorFunc);
 LikeFunc  = fcnchk(LikeFunc);
 
 % evaluate first model
-dhat  = dhatFunc(x1, varargin{:});    
+[dhat, dflag, Linputs] = dhatFunc(x1, varargin{:});    
 Px1   = PriorFunc(x1);
-Ld_x1 = LikeFunc(dhat);
+Ld_x1 = LikeFunc(dhat, Linputs);
 Px1_d = Px1 + Ld_x1;
 
 %Initialize the vectors x_keep and L_keep to store the accepted models
@@ -64,12 +64,13 @@ for i=1:Niter
     end
     
     %Evaluate forward model for the proposed model x2 that is within bounds
-    dhat = dhatFunc(x2, varargin{:});
+    [dhat, dflag, Linputs] = dhatFunc(x2, varargin{:});
+    if dflag~=1, continue; end
 
     %Evaluate probability of the model given the data using Bayesian
     %approach: P(x2|d)~ L(d|x2) P(x2)
     Px2   = PriorFunc(x2);
-    Ld_x2 = LikeFunc(dhat);
+    Ld_x2 = LikeFunc(dhat, Linputs);
     Px2_d = Px2 + Ld_x2;
 
     %Analyze the acceptance criterion by taking the ratio of the
