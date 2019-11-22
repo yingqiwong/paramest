@@ -15,7 +15,7 @@ Nvars = 2;
 mTrue = [5;6];
 sigma = 1e-3;
 
-N = 501;
+N = 101;
 r = 20*rand(N,1);
 nu = 0.25;
 
@@ -37,9 +37,9 @@ LkMdFunc  = @(model) ProbFuncs('LikeFuncModel', dhatFunc, model, data, sigma*one
 
 xtmp = mbnds(:,1) + diff(mbnds,[],2).*rand(2,1);
 [dhat, ~, Lin] = dhatFunc(xtmp);
-pr = PriorFunc(xtmp);
+[pr,junk] = PriorFunc(xtmp);
 lk = LikeFunc(dhat, Lin);
-lm = LkMdFunc(xtmp);
+[lm,dhat2] = LkMdFunc(xtmp);
 
 %% make some plots
 
@@ -81,24 +81,38 @@ ppd_mcmc = CalcPPD(x_keep(BurnIn:end,:), mbnds, 1000);
 
 %% gwmcmc
 
-minit = rand(Nvars, 100);
+minit = mbnds(:,1) + diff(mbnds,[],2).*rand(Nvars,100);
+
 tic
-[mgw, pgw] =gwmcmc(minit,{PriorFunc LkMdFunc},10*Niter,'ThinChain',1, 'BurnIn',0.2);
+[mgw, pgw, dhat] =gwmcmc(minit,{PriorFunc LkMdFunc},Niter,'ThinChain',1, ...
+    'BurnIn',0.2,'OutputData',1,'FileName','MogiTest.mat','ProgressBar',false);
 RunTime(2) = toc;
 
-mgw = mgw(:,:)'; pgw = pgw(:,:)';
+mgw = mgw(:,:)'; pgw = pgw(:,:)'; dhat = dhat(:,:)';
 ppd_gw = CalcPPD(mgw, mbnds, 1000);
 figure; ecornerplot(mgw(:,:)','ks',true,'color',[.6 .35 .3])
 
+figure;
+iplt=randi(length(dhat),1,100);
+for kk=iplt
+    h=plot(r(ir),dhat{kk,2}(ir),'color',[.6 .35 .3].^.3);
+    hold on
+end
+hdat  = errorbar(r, data, sigma*ones(size(data)), '^','color',lines(1)); hold on;
+htrue = plot(r(ir), dTrue{1}(ir), 'r-', 'linewidth', 4);
+xlabel('x_1'); ylabel('y');
+legend([hdat;htrue],{'Noisy';'True'},'location','best'); 
+legend boxoff;
+drawnow;
 
 %% Neighborhood algorithm
 
 NbrOpts       = LoadNbrOpts;
 NbrOpts.Ns    = 100;
 NbrOpts.Nr    = 50;
-NbrOpts.Niter = 19;
+NbrOpts.Niter = (Niter/NbrOpts.Ns)-1;
 NbrOpts.plot  = 0;
-NbrOpts.Ngibbs=200;
+NbrOpts.Ngibbs=500;
 
 % search
 tic;

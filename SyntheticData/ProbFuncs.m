@@ -8,7 +8,7 @@ function varargout = ProbFuncs(varargin)
 end
 
 
-function prior = PriorFunc (model, mu, sigma, distrib)
+function [prior, junk] = PriorFunc (model, mu, sigma, distrib)
 % prior = ProbFuncs('PriorFunc', model, mu, sigma, distrib)
 
 model = model(:); % just to make sure that model is Nvar x 1
@@ -28,6 +28,8 @@ switch distrib
 end
 
 prior = sum(log(pvar));
+
+junk  = nan; % pointless output that is needed for gwmcmc
 end
 
 
@@ -42,7 +44,7 @@ L = sum(-log(sigma(:)) - 0.5*log(2*pi) - 0.5*((data(:) - dhat{1}(:))./sigma(:)).
 end
 
 
-function L = LikeFuncModel (dhatFunc, model, data, sigma)
+function [L, dhat] = LikeFuncModel (dhatFunc, model, data, sigma)
 
 [dhat, flag, Linputs] = dhatFunc(model);
 L = LikeFunc(dhat, data, sigma, Linputs);

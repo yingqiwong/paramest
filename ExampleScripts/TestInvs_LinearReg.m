@@ -21,6 +21,7 @@ G = [ones(N,1), X];
 
 % synthetic data
 data = LinRegFuncs('NoisyData', G, mTrue, sigma);
+dTrue = LinRegFuncs('dhatFunc', G, mTrue);
 
 % run a least squares
 mlin = (G'*G)\(G'*data);
@@ -42,7 +43,7 @@ xtmp = rand(Nvars,1);
 [dhat, ~, Lin] = dhatFunc(xtmp);
 pr = PriorFunc(xtmp);
 lk = LikeFunc(dhat, Lin);
-lm = LkMdFunc(xtmp);
+[lm,dhat] = LkMdFunc(xtmp);
 
 %% make some plots
 
@@ -68,7 +69,7 @@ drawnow;
 
 x0    = rand(Nvars,1);
 xstep = 0.02*diff(mbnds,[],2); 
-Niter = 100000;
+Niter = 20000;
 BurnIn = 0.1*Niter;
 
 tic;
@@ -84,13 +85,25 @@ ppd_mcmc = CalcPPD(x_keep(BurnIn:end,:), mbnds, 1000);
 
 minit = rand(Nvars, 100);
 tic
-[mgw, pgw] =gwmcmc(minit,{PriorFunc LkMdFunc},Niter,'ThinChain',1, 'BurnIn',0.2);
+[mgw, pgw, dhat] =gwmcmc(minit,{PriorFunc LkMdFunc},Niter,'ThinChain',1,'BurnIn',0.3,'OutputData',1);
 RunTime(2) = toc;
 
-mgw = mgw(:,:)'; pgw = pgw(:,:)';
+mgw = mgw(:,:)'; pgw = pgw(:,:)'; dhat = dhat(:,:)';
 ppd_gw = CalcPPD(mgw, mbnds, 1000);
 figure; ecornerplot(mgw(:,:)','ks',true,'color',[.6 .35 .3])
 
+figure;
+plot(X, data, '^'); hold on;
+iplt=randi(length(dhat),1,200);
+for kk=iplt
+    h=plot(X(iX),dhat{kk,2}(iX),'color',[.6 .35 .3].^.3);
+    hold on
+end
+plot(X(iX), dTrue{1}(iX), 'r-', 'linewidth', 4);
+xlabel('x_1'); ylabel('y');
+legend('Noisy','True','random model','location','best'); 
+legend boxoff;
+drawnow;
 
 %% Neighborhood algorithm
 
@@ -124,7 +137,7 @@ for i = 1:Nvars
     plot(ppd_mcmc.m(:,i), ppd_mcmc.prob(:,i));
     hold on;
     plot(ppd_gw.m(:,i),   ppd_gw.prob(:,i));
-    plot(ppd_nbr.m(:,i),  ppd_nbr.prob(:,i));
+%     plot(ppd_nbr.m(:,i),  ppd_nbr.prob(:,i));
     plot(mTrue(i)*ones(1,2), ylim, 'k:');
     hold off;
     leg = legend('MCMC','GWMCMC','NBR1'); legend boxoff;
