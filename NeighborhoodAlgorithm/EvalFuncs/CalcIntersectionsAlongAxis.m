@@ -25,7 +25,7 @@ upper = 0;
 while upper < 1
     
     % calculate the upper and lower limits that intersect the current axis
-    [lower, upper, lInd, uInd] = CalcLimits (v, xAsearch, ivar);
+    [lower, upper, lInd, uInd] = CalcLimits(v, xAsearch, ivar);
     
     xji(count, :) = [lower, upper];
     

@@ -138,7 +138,7 @@ for i = 1:Nvars
     plot(ppd_mcmc.m(:,i), ppd_mcmc.prob(:,i));
     hold on;
     plot(ppd_gw.m(:,i),   ppd_gw.prob(:,i));
-    plot(ppd_nbr.m(:,i),  ppd_nbr.prob(:,i));
+%     plot(ppd_nbr.m(:,i),  ppd_nbr.prob(:,i));
     plot(mTrue(i)*ones(1,2), ylim, 'k:');
     hold off;
     leg = legend('MCMC','GWMCMC','NBR1'); legend boxoff;

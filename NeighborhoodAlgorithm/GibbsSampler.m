@@ -19,17 +19,26 @@ function [ppd, mOut, mRealOut, LPxi, mChain] = main (mEn, mBnds, LP, NbrOpts)
 % LPxi      log likelihood of resampled points
 % mChain    individual Gibbs sampler chains with log probabilities
 
+delete(gcp('nocreate'))
 addpath([fileparts(which(mfilename)) '/EvalFuncs/']);
 
 Nchain = NbrOpts.Nchain;
 Nrs    = NbrOpts.Ngibbs;
 Nppd   = NbrOpts.Nppd;
+Nvar   = size(mEn,2);
 
-Nvar        = size(mEn,2);
+% set up running in parallel
+if (NbrOpts.Parallel)
+    ParpoolObj = parpool(min([NbrOpts.Ncores,NbrOpts.Nchain])); 
+    NumWorkers = ParpoolObj.NumWorkers;
+else
+    NumWorkers = 0;
+end
 
-mChain      = cell(Nchain,2);
-% parpool(Nchain);
-for ich = 1:Nchain
+% initialize chain of models
+mChain = cell(Nchain,2);
+
+parfor (ich = 1:Nchain, NumWorkers)
     fprintf('Evaluating chain %d of %d.\n', ich, Nchain);
     
     Chain   = zeros(Nrs, Nvar);
@@ -42,10 +51,10 @@ for ich = 1:Nchain
     end
     toc;
     
-    mChain{ich,1} = Chain;
-    mChain{ich,2} = LPChain;
+    mChain(ich,:) = {Chain, LPChain}
 end
 
+% output matrix of all chains
 mOut = cell2mat(mChain(:,1));
 LPxi = cell2mat(mChain(:,2));
 
