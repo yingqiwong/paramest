@@ -68,6 +68,7 @@ for ivar = 1:Nvar
     ppd.prob(:,ivar) = ksdensity(mRealOut(:,ivar),ppd.m(:,ivar));
 end
 fprintf('Finished running ks density.\n');
+delete(gcp('nocreate'))
 
 end
 
@@ -128,7 +129,7 @@ while r > (LPxi-Pmax)
     iter  = iter + 1;
     xANew = rand(1);    % random walk
     LPxi  = GetConditionalProbability(xji, LP, xANew);
-    r     = log10(rand(1));
+    r     = log(rand(1));
 end
 
 

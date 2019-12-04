@@ -85,7 +85,7 @@ minit = mbnds(:,1) + diff(mbnds,[],2).*rand(Nvars,100);
 
 tic
 [mgw, pgw, dhat] =gwmcmc(minit,{PriorFunc LkMdFunc},Niter,'ThinChain',1, ...
-    'BurnIn',0.2,'OutputData',1,'FileName','MogiTest.mat','ProgressBar',false);
+    'BurnIn',0.2,'OutputData',1,'FileName','','ProgressBar',false);
 RunTime(2) = toc;
 
 mgw = mgw(:,:)'; pgw = pgw(:,:)'; dhat = dhat(:,:)';
@@ -110,9 +110,9 @@ drawnow;
 NbrOpts       = LoadNbrOpts;
 NbrOpts.Ns    = 100;
 NbrOpts.Nr    = 50;
-NbrOpts.Niter = (Niter/NbrOpts.Ns)-1;
+NbrOpts.Niter = 19;
 NbrOpts.plot  = 0;
-NbrOpts.Ngibbs=500;
+NbrOpts.Ngibbs= 500;
 
 % search
 tic;

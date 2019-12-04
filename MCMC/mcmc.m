@@ -92,4 +92,6 @@ for i=1:Niter
 end
    
 x_keep = x_keep';
+
+fprintf('Acceptance ratio = %.2f.\n', count/length(P_keep));
 end
