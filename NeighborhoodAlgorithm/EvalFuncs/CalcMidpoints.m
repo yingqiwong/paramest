@@ -8,13 +8,13 @@ function [xji] = CalcMidpoints (v, xA, ivar)
 
 % find nearest cell node by minimizing distance between v and xA
 distances = sqrt(sum((v - xA).^2, 2)); 
-[~, k] = min(distances);
+[~, k]    = min(distances);
 
 % point of interest
 xAperp = xA;
 xAperp(ivar) = v(k,ivar);
 
-dk2 = norm(v(k,:) - xAperp).^2;
+dk2 = sqrt(sum((v(k,:) - xAperp).^2));
 
 xji = zeros(Npts, 1);
 for ix = 1:Npts

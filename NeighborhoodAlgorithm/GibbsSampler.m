@@ -36,7 +36,8 @@ else
 end
 
 % initialize chain of models
-mChain = cell(Nchain,2);
+mChain   = cell(Nchain,2);
+varFixed = (mBnds(:,1) == mBnds(:,2));
 
 parfor (ich = 1:Nchain, NumWorkers)
     fprintf('Evaluating chain %d of %d.\n', ich, Nchain);
@@ -45,9 +46,12 @@ parfor (ich = 1:Nchain, NumWorkers)
     LPChain = zeros(Nrs, 1);
     
     tic;
-    [Chain(1,:), LPChain(1)] = RandomWalkAllDim(mEn, LP, rand(1,Nvar));
+    m0 = rand(1,Nvar);
+    m0(varFixed) = 1;
+    
+    [Chain(1,:), LPChain(1)] = RandomWalkAllDim(mEn, LP, m0, varFixed);
     for in = 2:Nrs
-        [Chain(in,:), LPChain(in)]  = RandomWalkAllDim(mEn, LP, Chain(in-1,:));
+        [Chain(in,:), LPChain(in)]  = RandomWalkAllDim(mEn, LP, Chain(in-1,:), varFixed);
     end
     toc;
     
@@ -72,7 +76,7 @@ delete(gcp('nocreate'))
 
 end
 
-function [xANew, LPxi, iter] = RandomWalkAllDim (mEn, LP, xA)
+function [xANew, LPxi, iter] = RandomWalkAllDim (mEn, LP, xA, varFixed)
 % performs random walk along all variable directions, where the stairstep
 % Assumes that range of variables xA, xANew is [0,1]
 % 
@@ -80,6 +84,7 @@ function [xANew, LPxi, iter] = RandomWalkAllDim (mEn, LP, xA)
 % mEn       ensemble of models (Niter x Nvar)
 % LP        log probability of models (Niter x 1)
 % xA        starting point (Nvar x 1)
+% varFixed  check if variable is supposed to be fixed.
 %
 % Outputs
 % xANew     next point (all dimensions looped through)
@@ -92,6 +97,10 @@ xANew = xA;
 iter  = zeros(Nvar,1);
 
 for ivar = 1:Nvar
+    
+    % if the variable should be fixed, move on to the next variable
+    if varFixed(ivar), continue; end
+    
     [xji, xcell] = CalcIntersectionsAlongAxis(mEn, xANew, ivar);
     [xANew(ivar), LPxi, iter(ivar)] = RandomWalkOneDim(xji, LP(xcell), xANew(ivar));
 end

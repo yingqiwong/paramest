@@ -13,7 +13,7 @@ set(0,'defaultlinelinewidth',2);
 Nvars = 2;
 % mTrue = rand(Nvars,1);
 mTrue = [5;6];
-sigma = 1e-3;
+sigma = 2e-3;
 
 N = 101;
 r = 20*rand(N,1);
@@ -138,7 +138,7 @@ for i = 1:Nvars
     plot(ppd_mcmc.m(:,i), ppd_mcmc.prob(:,i));
     hold on;
     plot(ppd_gw.m(:,i),   ppd_gw.prob(:,i));
-%     plot(ppd_nbr.m(:,i),  ppd_nbr.prob(:,i));
+    plot(ppd_nbr.m(:,i),  ppd_nbr.prob(:,i));
     plot(mTrue(i)*ones(1,2), ylim, 'k:');
     hold off;
     leg = legend('MCMC','GWMCMC','NBR1'); legend boxoff;

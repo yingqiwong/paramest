@@ -5,8 +5,8 @@ function [lower, upper, lInd, uInd] = CalcLimits (v, xA, ivar)
 
 [xji] = CalcMidpoints(v, xA, ivar);
 
-LowerInds = find(xji<=xA(ivar));
-UpperInds = find(xji>=xA(ivar));
+LowerInds = find(xji<xA(ivar));
+UpperInds = find(xji>xA(ivar));
 
 [lower, lIndTmp] = max([xji(LowerInds); 0]);
 [upper, uIndTmp] = min([xji(UpperInds); 1]);
