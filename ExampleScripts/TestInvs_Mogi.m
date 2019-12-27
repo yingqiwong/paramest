@@ -29,6 +29,7 @@ mbnds  = [0,10;0,10];
 
 dhatFunc  = @(model) MogiFuncs('dhatFunc', model,r,nu);
 PriorFunc = @(model) ProbFuncs('PriorFunc',model,mbnds,[],'Uniform');
+PrSmpFunc = @(Niter) ProbFuncs('PriorSampFunc', 'Uniform', Niter, mbnds);
 LikeFunc  = @(dhat, Linputs) ProbFuncs('LikeFunc',dhat,data,sigma*ones(size(data)),Linputs);
 LkMdFunc  = @(model) ProbFuncs('LikeFuncModel', dhatFunc, model, data, sigma*ones(size(data)));
 
@@ -105,6 +106,31 @@ legend([hdat;htrue],{'Noisy';'True'},'location','best');
 legend boxoff;
 drawnow;
 
+%% catmip
+
+Ncm = 500;
+mtmp = PrSmpFunc(10);
+tic
+[xcm, LLK, dhcm, allx] = catmip(PrSmpFunc, LkMdFunc, ...
+    'Niter', Ncm, 'Nsteps', 5);
+RunTime(3) = toc;
+ppd_catmip = CalcPPD(xcm', mbnds, 1000);
+figure; ecornerplot(xcm','ks',true,'color',[.6 .35 .3])
+PlotTemperingSteps(allx, mbnds, mNames)
+
+figure;
+iplt=randi(length(dhcm),1,40);
+for kk=iplt
+    h=plot(r(ir),dhcm{kk}(ir),'color',[.6 .35 .3].^.3);
+    hold on
+end
+hdat  = errorbar(r, data, sigma*ones(size(data)), '^','color',lines(1)); hold on;
+htrue = plot(r(ir), dTrue{1}(ir), 'r-', 'linewidth', 4);
+xlabel('x_1'); ylabel('y');
+legend([hdat;htrue],{'Noisy';'True'},'location','best'); 
+legend boxoff;
+drawnow;
+
 %% Neighborhood algorithm
 
 NbrOpts       = LoadNbrOpts;
@@ -112,13 +138,13 @@ NbrOpts.Ns    = 100;
 NbrOpts.Nr    = 50;
 NbrOpts.Niter = 19;
 NbrOpts.plot  = 0;
-NbrOpts.Ngibbs= 500;
+NbrOpts.Ngibbs= 200;
 
 % search
 tic;
 [mReal, mNorm, ~, L, ~, ~, ~] = NeighborhoodSearch('main',...
     dhatFunc, LikeFunc, mbnds, mNames, NbrOpts, 1);
-RunTime(3) = toc;
+RunTime(4) = toc;
 
 % appraise
 [ppd_nbr, mOut, mRealOut, LPxi, mChain] = GibbsSampler('main', mNorm, mbnds, L, NbrOpts);
@@ -138,10 +164,11 @@ for i = 1:Nvars
     plot(ppd_mcmc.m(:,i), ppd_mcmc.prob(:,i));
     hold on;
     plot(ppd_gw.m(:,i),   ppd_gw.prob(:,i));
-    plot(ppd_nbr.m(:,i),  ppd_nbr.prob(:,i));
+    plot(ppd_catmip.m(:,i), ppd_catmip.prob(:,i));
+%     plot(ppd_nbr.m(:,i),  ppd_nbr.prob(:,i));
     plot(mTrue(i)*ones(1,2), ylim, 'k:');
     hold off;
-    leg = legend('MCMC','GWMCMC','NBR1'); legend boxoff;
+    leg = legend('MCMC','GWMCMC','CATMIP','NBR1'); legend boxoff;
     title(leg, 'NA search max iter');
 end
 

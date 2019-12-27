@@ -32,6 +32,27 @@ prior = sum(log(pvar));
 junk  = nan; % pointless output that is needed for gwmcmc
 end
 
+function [models] = PriorSampFunc (distrib, Niter, mdef)
+% samples from the prior distribution - either a normal or uniform
+% distribution.
+% mdef is size (Nvar x 2 - 2 parameters needed to define the distribution)
+
+Nvar = size(mdef,1);
+
+switch distrib
+    case 'Normal'
+        mu  = repmat(mdef(:,1), 1, Niter);
+        sig = repmat(mdef(:,2), 1, Niter);
+        models = normrnd(mu, sig);
+        
+    case 'Uniform'
+        lower = repmat(mdef(:,1), 1, Niter);
+        upper = repmat(mdef(:,2), 1, Niter);
+        models = unifrnd(lower, upper);
+end
+
+end
+
 
 function L = LikeFunc (dhat, data, sigma, Linputs)
 % L = ProbFuncs('LikeFunc', dhat, data, sigma, Linputs)
