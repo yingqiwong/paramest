@@ -114,8 +114,8 @@ tic
 [xcm, LLK, dhcm, allx] = catmip(PrSmpFunc, LkMdFunc, ...
     'Niter', Ncm, 'Nsteps', 5);
 RunTime(3) = toc;
-ppd_catmip = CalcPPD(xcm', mbnds, 1000);
-figure; ecornerplot(xcm','ks',true,'color',[.6 .35 .3])
+ppd_catmip = CalcPPD(xcm, mbnds, 1000);
+figure; ecornerplot(xcm,'ks',true,'color',[.6 .35 .3])
 PlotTemperingSteps(allx, mbnds, mNames)
 
 figure;

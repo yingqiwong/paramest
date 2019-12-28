@@ -41,13 +41,13 @@ Nvar = size(mdef,1);
 
 switch distrib
     case 'Normal'
-        mu  = repmat(mdef(:,1), 1, Niter);
-        sig = repmat(mdef(:,2), 1, Niter);
+        mu  = repmat(mdef(:,1)', Niter, 1);
+        sig = repmat(mdef(:,2)', Niter, 1);
         models = normrnd(mu, sig);
         
     case 'Uniform'
-        lower = repmat(mdef(:,1), 1, Niter);
-        upper = repmat(mdef(:,2), 1, Niter);
+        lower = repmat(mdef(:,1)', Niter, 1);
+        upper = repmat(mdef(:,2)', Niter, 1);
         models = unifrnd(lower, upper);
 end
 

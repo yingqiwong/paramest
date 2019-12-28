@@ -36,13 +36,13 @@ beta = 0; c = 0; m=0;
 
 % start by sampling from the prior distribution
 models  = PriorSampFunc(opts.Niter);
-Nparam  = size(models,1);
-LLK     = zeros(1,opts.Niter);              % log likelihood
+Nparam  = size(models,2);
+LLK     = zeros(opts.Niter, 1);              % log likelihood
 dhat    = cell(opts.Niter, opts.Ndatasets); % predicted data
 
 % run forward models
 parfor (mi = 1:opts.Niter, NumWorkers)
-    [LLK(mi), dhat(mi,:)] = LikeFunc(models(:,mi));
+    [LLK(mi), dhat(mi,:)] = LikeFunc(models(mi,:));
 end
 fprintf('m\tCm^2\tCOV\tbeta\t\tNaccept\t\tNreject\n');
 fprintf('%d\t%.4f\t%.4f\t%.4f\t%.4e\t%.4e\n',m,Cmsqr,c,beta,0,0);
@@ -52,7 +52,7 @@ if (opts.SaveFile)
 end
 
 % track an array of all models to see transition of posterior during tempering
-allmodels = zeros(Nparam, opts.Niter, 1000);
+allmodels = zeros(opts.Niter, Nparam, 1000);
 allmodels(:,:,1) = models;
 
 % start loop for tempering
@@ -61,19 +61,21 @@ while beta<1
     
     % update temperature
     [w,beta,dbeta,c] = calc_beta(LLK,beta,dbeta);
+    
+    fprintf('m\tCm^2\tCOV\tbeta\t\tNaccept\t\tNreject\n');
     fprintf('%d\t%.4f\t%.4f\t%.4f\t',m,Cmsqr,c,beta);
     
     % Resample to match new PriorFunc PDF
-    count=histc(rand([1 opts.Niter]),[0 cumsum(w)]);
+    count=histc(rand([opts.Niter 1]),[0; cumsum(w)]);
     count(end-1)=sum(count(end-1:end));
     count=count(1:end-1);
     
     ind=[]; 
     for i=1:length(count)
-        ind=[ind repmat(i,1,count(i))]; 
+        ind=[ind; repmat(i,count(i),1)]; 
     end
     
-    models  = models(:,ind);
+    models  = models(ind,:);
     LLK     = LLK(ind);
     dhat    = dhat(ind,:);
     
@@ -84,40 +86,40 @@ while beta<1
     % 3. Calcluate Sm = sum{p_i*models_i*models_i^T} - E*E^T
     % 4. Return Cm^2 * Sm
     p=w/sum(w);
-    E=sum([repmat(p,Nparam,1).*models],2);
+    E=sum(repmat(p,1,Nparam).*models, 1);
     Sm=zeros(Nparam);
-    for i=1:size(models,2)
-        Sm = Sm+p(i)*models(:,i)*models(:,i)'; 
+    for i=1:opts.Niter
+        Sm = Sm+p(i)*models(i,:)'*models(i,:); 
     end
-    Sm = Sm-E*E';
+    Sm = Sm-E'*E;
     Sm = Cmsqr*Sm;
     Sm = 0.5*(Sm + Sm'); % Make sure that Sm is symmetric
     
     % Run opts.Nsteps of Metropolis on each sample
-    IOacc = zeros(opts.Nsteps-1,opts.Niter);
+    IOacc = zeros(opts.Niter, opts.Nsteps-1);
     
     % Loop over samples: each sample is the seed for a Markov chain
-    parfor (ii = 1:opts.Niter, NumWorkers)
+    for (ii = 1:opts.Niter)
         
-        X       = zeros(Nparam, opts.Nsteps);
-        Xllk    = zeros(1, opts.Nsteps);
+        X       = zeros(opts.Nsteps, Nparam);
+        Xllk    = zeros(opts.Nsteps, 1);
         Xdhat   = cell(opts.Nsteps, opts.Ndatasets);
         XIOacc  = zeros(opts.Nsteps-1,1);
         
         % Our current sample is the seed for the chain
-        X(:,1)      = models(:,ii); 
+        X(1,:)      = models(ii,:); 
         Xllk(1)     = LLK(ii);
         Xdhat(1,:)  = dhat(ii,:);
-        z           = mvnrnd(zeros(Nparam,1), Sm, opts.Nsteps)';
+        z           = mvnrnd(zeros(1,Nparam), Sm, opts.Nsteps);
         
         % Run Metropolis
         for k=1:opts.Nsteps-1 
             % current step
-            x   = X(:,k);
+            x   = X(k,:);
             px  = Xllk(k);
             
             % proposed step
-            y   = X(:,k) + z(:,k);
+            y   = X(k,:) + z(k,:);
             [py,dy] = LikeFunc(y);
             
             % compare posterior probabilities
@@ -125,24 +127,24 @@ while beta<1
             u   = log(rand);
             
             if u<=r
-                X(:,k+1)     = y; 
-                Xllk(:,k+1)  = py; 
+                X(k+1,:)     = y; 
+                Xllk(k+1,:)  = py; 
                 Xdhat(k+1,:) = dy;
                 XIOacc(k)    = 1;
 %                 IOacc(k,ii)  = 1; %Naccept=Naccept+1;
             else
-                X(:,k+1)     = x; 
-                Xllk(:,k+1)  = px; %Nreject=Nreject+1;
+                X(k+1,:)     = x; 
+                Xllk(k+1,:)  = px; %Nreject=Nreject+1;
                 Xdhat(k+1,:) = Xdhat(k,:);
             end
         end
         
         % Save only the last sample from the Markov chain
         % Now the original sample has been updated by MCMC
-        models(:,ii) = X(:,end); 
-        LLK(ii)      = Xllk(:,end); 
+        models(ii,:) = X(end,:); 
+        LLK(ii)      = Xllk(end); 
         dhat(ii,:)   = Xdhat(end,:);
-        IOacc(:,ii)  = XIOacc;
+        IOacc(ii,:)  = XIOacc';
     end
     
     

@@ -5,7 +5,7 @@ function [] = PlotTemperingSteps (allmodels, mbnds, mNames)
 %
 % YQW Dec 27, 2019
 
-[Nvar, Niter, Ntemp] = size(allmodels);
+[Niter, Nvar, Ntemp] = size(allmodels);
 if nargin<3, mNames = repmat({''}, Nvar, 1); end
 
 figure;
@@ -18,7 +18,7 @@ for vi = 1:Nvar
     dx    = vbins(2) - vbins(1);
 
     for ti = 1:Ntemp
-        [n, vbins] = histcounts(allmodels(vi,:,ti), vbins);        
+        [n, vbins] = histcounts(allmodels(:,vi,ti), vbins);        
         plot(vbins(1:end-1)+0.5*dx, 1/Niter/dx*n); hold on;
     end
     hold off;
