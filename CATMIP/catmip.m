@@ -1,4 +1,4 @@
-function [models, LLK, dhat, allmodels] = catmip (PriorSampFunc, LikeFunc, varargin)
+function [models, LLK, dhat, RunTime, allmodels] = catmip (PriorSampFunc, LikeFunc, varargin)
 % [models, LLK] = catmip (PriorSampFunc, LikeFunc, varargin)
 %
 % Uses the CATMIP algorithm to derive the posterior distribution for a
@@ -15,6 +15,9 @@ function [models, LLK, dhat, allmodels] = catmip (PriorSampFunc, LikeFunc, varar
 % OUTPUTS
 % models    posterior distribution of models
 % LLK       log-likelihood of models
+% dhat      predicted data
+% RunTime   here i've only figured out how to store the first 1000 runtimes
+% allmodels large array containing all models from each tempering step.
 %
 % YQW Dec 27, 2019. Based on Sarah Minson's mcmc demo code.
 % 
@@ -39,16 +42,22 @@ models  = PriorSampFunc(opts.Niter);
 Nparam  = size(models,2);
 LLK     = zeros(opts.Niter, 1);              % log likelihood
 dhat    = cell(opts.Niter, opts.Ndatasets);  % predicted data
+RunTime = zeros(opts.Niter, 1);              % collect runtime
 
 % run forward models
+fprintf('Running initial %d models from prior...\n', opts.Niter);
 parfor (mi = 1:opts.Niter, NumWorkers)
+    tm = tic;
     [LLK(mi), dhat(mi,:)] = LikeFunc(models(mi,:));
+    RunTime(mi) = toc(tm);
 end
+fprintf('Finished initial %d models from prior\n\n', opts.Niter);
+
 fprintf('m\tCm^2\tCOV\tbeta\t\tNaccept\t\tNreject\n');
 fprintf('%d\t%.4f\t%.4f\t%.4f\t%.4e\t%.4e\n',m,Cmsqr,c,beta,0,0);
 
 if (opts.SaveFile)
-    save(opts.FileName, 'models', 'LLK', 'dhat', 'beta');
+    save(opts.FileName, 'models', 'LLK', 'dhat', 'beta', 'RunTime');
 end
 
 % track an array of all models to see transition of posterior during tempering
@@ -163,7 +172,7 @@ while beta<1
     
     if (opts.SaveFile)
         allmodelstmp = allmodels(:,:,1:m+1);
-        save(opts.FileName, 'models', 'allmodelstmp', 'LLK', 'dhat', 'beta');
+        save(opts.FileName, 'models', 'allmodelstmp', 'LLK', 'dhat', 'beta', 'RunTime');
     end
     
     if (1-beta < 0.005); fprintf('mstop=%d\n',m); mstop=m; break; end
