@@ -32,13 +32,13 @@ else
 end
 
 % set initial tempering values
-beta = 0; c = 0; m=0;
+beta = 0; c = 0; m = 0;
 
 % start by sampling from the prior distribution
 models  = PriorSampFunc(opts.Niter);
 Nparam  = size(models,2);
 LLK     = zeros(opts.Niter, 1);              % log likelihood
-dhat    = cell(opts.Niter, opts.Ndatasets); % predicted data
+dhat    = cell(opts.Niter, opts.Ndatasets);  % predicted data
 
 % run forward models
 parfor (mi = 1:opts.Niter, NumWorkers)
@@ -66,13 +66,13 @@ while beta<1
     fprintf('%d\t%.4f\t%.4f\t%.4f\t',m,Cmsqr,c,beta);
     
     % Resample to match new PriorFunc PDF
-    count=histc(rand([opts.Niter 1]),[0; cumsum(w)]);
+    count = histc(rand([opts.Niter 1]),[0; cumsum(w)]);
     count(end-1)=sum(count(end-1:end));
-    count=count(1:end-1);
+    count = count(1:end-1);
     
-    ind=[]; 
+    ind = []; 
     for i=1:length(count)
-        ind=[ind; repmat(i,count(i),1)]; 
+        ind = [ind; repmat(i,count(i),1)]; 
     end
     
     models  = models(ind,:);
@@ -85,9 +85,9 @@ while beta<1
     % 2. Calculate the expected value: E = sum(p_i*models_i)
     % 3. Calcluate Sm = sum{p_i*models_i*models_i^T} - E*E^T
     % 4. Return Cm^2 * Sm
-    p=w/sum(w);
-    E=sum(repmat(p,1,Nparam).*models, 1);
-    Sm=zeros(Nparam);
+    p  = w/sum(w);
+    E  = sum(repmat(p,1,Nparam).*models, 1);
+    Sm = zeros(Nparam);
     for i=1:opts.Niter
         Sm = Sm+p(i)*models(i,:)'*models(i,:); 
     end
@@ -99,7 +99,7 @@ while beta<1
     IOacc = zeros(opts.Niter, opts.Nsteps-1);
     
     % Loop over samples: each sample is the seed for a Markov chain
-    for (ii = 1:opts.Niter)
+    parfor (ii = 1:opts.Niter, NumWorkers)
         
         X       = zeros(opts.Nsteps, Nparam);
         Xllk    = zeros(opts.Nsteps, 1);
@@ -131,7 +131,6 @@ while beta<1
                 Xllk(k+1,:)  = py; 
                 Xdhat(k+1,:) = dy;
                 XIOacc(k)    = 1;
-%                 IOacc(k,ii)  = 1; %Naccept=Naccept+1;
             else
                 X(k+1,:)     = x; 
                 Xllk(k+1,:)  = px; %Nreject=Nreject+1;
@@ -148,8 +147,8 @@ while beta<1
     end
     
     
-    Naccept=sum(IOacc(:));
-    Nreject=length(IOacc(:))-Naccept;
+    Naccept = sum(IOacc(:));
+    Nreject = length(IOacc(:))-Naccept;
     allmodels(:,:,m+1) = models;
 
     fprintf('%.4e\t%.4e\n',Naccept,Nreject);
