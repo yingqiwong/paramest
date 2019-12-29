@@ -208,7 +208,7 @@ function [w,beta,dbeta,c] = calc_beta (LLK,beta,dbeta)
 % achieved when new beta is chosen so that cov(w)=1 (Beck and Zuev, 2013)
 
 try
-    dbeta2 = fzero(@(db) (calc_c(db, LLK)-1), [0,10]);
+    dbeta2 = fzero(@(db) (calc_c(db, LLK)-1), [0,1-beta]);
 catch
     dbeta2 = 1-beta;
 end
