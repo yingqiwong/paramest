@@ -213,7 +213,7 @@ catch
     dbeta2 = 1-beta;
 end
 
-dbeta2  = min([dbeta2, 1-beta]);
+% dbeta2  = min([dbeta2, 1-beta]);
 beta    = beta + dbeta2;
 
 w = calc_w(dbeta2, LLK);
