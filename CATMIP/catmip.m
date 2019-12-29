@@ -206,10 +206,16 @@ end
 function [w,beta,dbeta,c] = calc_beta (LLK,beta,dbeta)
 % calculates the next optimum cooling temperature. Most efficient sampling 
 % achieved when new beta is chosen so that cov(w)=1 (Beck and Zuev, 2013)
-dbeta2 = fzero(@(db) (calc_c(db, LLK)-1), [0,10]);
-dbeta2 = min([dbeta2, 1-beta]);
 
-beta = beta+dbeta2;
+try
+    dbeta2 = fzero(@(db) (calc_c(db, LLK)-1), [0,10]);
+catch
+    dbeta2 = 1-beta;
+end
+
+dbeta2  = min([dbeta2, 1-beta]);
+beta    = beta + dbeta2;
+
 w = calc_w(dbeta2, LLK);
 c = nanstd(w)/nanmean(w);
 end
