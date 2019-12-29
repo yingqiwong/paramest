@@ -51,7 +51,8 @@ parfor (mi = 1:opts.Niter, NumWorkers)
     [LLK(mi), dhat(mi,:)] = LikeFunc(models(mi,:));
     RunTime(mi) = toc(tm);
 end
-fprintf('Finished initial %d models from prior\n\n', opts.Niter);
+fprintf('Finished initial %d models from prior. Time taken = %.4f hours.\n\n',...
+    opts.Niter, sum(RunTime)/3600);
 
 fprintf('m\tCm^2\tCOV\tbeta\t\tNaccept\t\tNreject\n');
 fprintf('%d\t%.4f\t%.4f\t%.4f\t%.4e\t%.4e\n',m,Cmsqr,c,beta,0,0);
