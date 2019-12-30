@@ -111,7 +111,7 @@ drawnow;
 Ncm = 500;
 mtmp = PrSmpFunc(10);
 tic
-[xcm, LLK, dhcm, allx] = catmip(PrSmpFunc, LkMdFunc, ...
+[xcm, LLK, dhcm, allx] = catmip(PrSmpFunc, LkMdFunc, mbnds...
     'Niter', Ncm, 'Nsteps', 5);
 RunTime(3) = toc;
 ppd_catmip = CalcPPD(xcm, mbnds, 1000);

@@ -1,5 +1,5 @@
 function [] = PlotTemperingSteps (allmodels, mbnds, mNames)
-% PlotTemperingSteps (allmodels, mbnds)
+% PlotTemperingSteps (allmodels, mbnds, mNames)
 %
 % plots distribution for each tempering step from catmip output allmodels
 %

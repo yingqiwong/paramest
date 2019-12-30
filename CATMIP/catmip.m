@@ -1,4 +1,4 @@
-function [models, LLK, dhat, RunTime, allmodels] = catmip (PriorSampFunc, LikeFunc, varargin)
+function [models, LLK, dhat, RunTime, allmodels] = catmip (PriorSampFunc, LikeFunc, mbnds, varargin)
 % [models, LLK] = catmip (PriorSampFunc, LikeFunc, varargin)
 %
 % Uses the CATMIP algorithm to derive the posterior distribution for a
@@ -73,7 +73,7 @@ while beta<1
     [w,beta,dbeta,c] = calc_beta(LLK,beta,dbeta);
     
     fprintf('m\tCm^2\tCOV\tbeta\t\tNaccept\t\tNreject\n');
-    fprintf('%d\t%.4f\t%.4f\t%.4f\t',m,Cmsqr,c,beta);
+    fprintf('%d\t%.4f\t%.4f\t%.2e\t',m,Cmsqr,c,beta);
     
     % Resample to match new PriorFunc PDF
     count = histc(rand([opts.Niter 1]),[0; cumsum(w)]);
@@ -130,7 +130,13 @@ while beta<1
             
             % proposed step
             y   = X(k,:) + z(k,:);
-            [py,dy] = LikeFunc(y);
+            
+            if all(y(:)>=mbnds(:,1)) && all(y(:)<=mbnds(:,2))
+                [py,dy] = LikeFunc(y);
+            else
+                py = -1e10;
+                dy = cell(1,opts.Ndatasets);
+            end
             
             % compare posterior probabilities
             r   = beta*(py-px);
