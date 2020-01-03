@@ -14,7 +14,7 @@ distances = sqrt(sum((v - xA).^2, 2));
 xAperp = xA;
 xAperp(ivar) = v(k,ivar);
 
-dk2 = sqrt(sum((v(k,:) - xAperp).^2));
+dk2 = norm(v(k,:) - xAperp).^2;
 
 xji = zeros(Npts, 1);
 for ix = 1:Npts

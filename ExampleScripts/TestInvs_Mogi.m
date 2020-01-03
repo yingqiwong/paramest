@@ -111,7 +111,7 @@ drawnow;
 Ncm = 500;
 mtmp = PrSmpFunc(10);
 tic
-[xcm, LLK, dhcm, allx] = catmip(PrSmpFunc, LkMdFunc, mbnds...
+[xcm, LLK, dhcm, allx] = catmip(PrSmpFunc, LkMdFunc, mbnds,...
     'Niter', Ncm, 'Nsteps', 5);
 RunTime(3) = toc;
 ppd_catmip = CalcPPD(xcm, mbnds, 1000);
@@ -138,13 +138,16 @@ NbrOpts.Ns    = 100;
 NbrOpts.Nr    = 50;
 NbrOpts.Niter = 19;
 NbrOpts.plot  = 0;
-NbrOpts.Ngibbs= 200;
+NbrOpts.Ngibbs= 1000;
 
 % search
 tic;
 [mReal, mNorm, ~, L, ~, ~, ~] = NeighborhoodSearch('main',...
     dhatFunc, LikeFunc, mbnds, mNames, NbrOpts, 1);
 RunTime(4) = toc;
+
+PlotNAIterations(mNorm, mNames, mbnds, L, NbrOpts, 1:20)
+AddTrueModelToPlot((mTrue-mbnds(:,1))/diff(mbnds,[],2));
 
 % appraise
 [ppd_nbr, mOut, mRealOut, LPxi, mChain] = GibbsSampler('main', mNorm, mbnds, L, NbrOpts);
@@ -165,7 +168,7 @@ for i = 1:Nvars
     hold on;
     plot(ppd_gw.m(:,i),   ppd_gw.prob(:,i));
     plot(ppd_catmip.m(:,i), ppd_catmip.prob(:,i));
-%     plot(ppd_nbr.m(:,i),  ppd_nbr.prob(:,i));
+    plot(ppd_nbr.m(:,i),  ppd_nbr.prob(:,i));
     plot(mTrue(i)*ones(1,2), ylim, 'k:');
     hold off;
     leg = legend('MCMC','GWMCMC','CATMIP','NBR1'); legend boxoff;

@@ -37,29 +37,35 @@ end
 
 % initialize chain of models
 mChain   = cell(Nchain,2);
-varFixed = (mBnds(:,1) == mBnds(:,2));
 
-parfor (ich = 1:Nchain, NumWorkers)
+% remove parameters that are fixed in inversion
+VarFixed = (mBnds(:,1) == mBnds(:,2));
+mVars    = mEn(:,~VarFixed);
+Nvar2    = size(mVars,2);
+
+% parfor (ich = 1:Nchain, NumWorkers)
+for ich = 1:Nchain
     fprintf('Evaluating chain %d of %d.\n', ich, Nchain);
     
-    Chain   = zeros(Nrs, Nvar);
+    Chain   = zeros(Nrs, Nvar2);
     LPChain = zeros(Nrs, 1);
     
     tic;
-    m0 = rand(1,Nvar);
-    m0(varFixed) = 1;
+    m0 = rand(1,Nvar2);    
+    [Chain(1,:), LPChain(1)] = RandomWalkAllDim(mVars, LP, m0);
     
-    [Chain(1,:), LPChain(1)] = RandomWalkAllDim(mEn, LP, m0, varFixed);
     for in = 2:Nrs
-        [Chain(in,:), LPChain(in)]  = RandomWalkAllDim(mEn, LP, Chain(in-1,:), varFixed);
+        [Chain(in,:), LPChain(in)]  = RandomWalkAllDim(mVars, LP, Chain(in-1,:));
     end
     toc;
     
-    mChain(ich,:) = {Chain, LPChain}
+    mChain(ich,:) = {Chain, LPChain};
 end
 
 % output matrix of all chains
-mOut = cell2mat(mChain(:,1));
+mOut = zeros(Nchain*Nrs, Nvar);
+mOut(:,~VarFixed) = cell2mat(mChain(:,1));
+mOut(:,VarFixed)  = mBnds(VarFixed,1);
 LPxi = cell2mat(mChain(:,2));
 
 mRealOut = ConvertToRealUnits(mOut, mBnds);
@@ -76,7 +82,7 @@ delete(gcp('nocreate'))
 
 end
 
-function [xANew, LPxi, iter] = RandomWalkAllDim (mEn, LP, xA, varFixed)
+function [xANew, LPxi, iter] = RandomWalkAllDim (mEn, LP, xA)
 % performs random walk along all variable directions, where the stairstep
 % Assumes that range of variables xA, xANew is [0,1]
 % 
@@ -84,7 +90,6 @@ function [xANew, LPxi, iter] = RandomWalkAllDim (mEn, LP, xA, varFixed)
 % mEn       ensemble of models (Niter x Nvar)
 % LP        log probability of models (Niter x 1)
 % xA        starting point (Nvar x 1)
-% varFixed  check if variable is supposed to be fixed.
 %
 % Outputs
 % xANew     next point (all dimensions looped through)
@@ -96,11 +101,10 @@ Nvar = length(xA);
 xANew = xA;
 iter  = zeros(Nvar,1);
 
-for ivar = 1:Nvar
-    
-    % if the variable should be fixed, move on to the next variable
-    if varFixed(ivar), continue; end
-    
+% permute order of components for each deviate
+order = randperm(Nvar); 
+
+for ivar = order    
     [xji, xcell] = CalcIntersectionsAlongAxis(mEn, xANew, ivar);
     [xANew(ivar), LPxi, iter(ivar)] = RandomWalkOneDim(xji, LP(xcell), xANew(ivar));
 end
