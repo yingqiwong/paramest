@@ -22,6 +22,8 @@ function [ppd, mOut, mRealOut, LPxi, mChain] = main (mEn, mBnds, LP, NbrOpts)
 delete(gcp('nocreate'))
 addpath([fileparts(which(mfilename)) '/EvalFuncs/']);
 
+[mEn, LP] = CleanEnsemblePts(mEn, LP);
+
 Nchain = NbrOpts.Nchain;
 Nrs    = NbrOpts.Ngibbs;
 Nppd   = NbrOpts.Nppd;
@@ -51,7 +53,9 @@ for ich = 1:Nchain
     LPChain = zeros(Nrs, 1);
     
     tic;
-    m0 = rand(1,Nvar2);    
+    % start from high likelihood models, but skip a few so that they are
+    % not too correlated.
+    m0 = mVars((ich-1)*10+1,:);   
     [Chain(1,:), LPChain(1)] = RandomWalkAllDim(mVars, LP, m0);
     
     for in = 2:Nrs
@@ -80,6 +84,27 @@ end
 fprintf('Finished running ks density.\n');
 delete(gcp('nocreate'))
 
+end
+
+function [mEnOut, LPOut] = CleanEnsemblePts (mEnIn, LPIn)
+% clean up the input ensemble of models
+
+mEnOut = mEnIn;
+
+% remove unevaluated points
+mEnOut(isnan(LPIn),:) = [];
+
+% remove models that are out of bounds
+RmFlag = zeros(size(mEnOut,1),1);
+for mi = 1:size(mEnOut,1)
+    RmFlag(mi) = (any(mEnOut(mi,:) < 0)) || (any(mEnOut(mi,:)) > 1);
+end
+mEnOut(RmFlag==1,:) = [];
+
+% sort by decreasing log-probability
+tmp = sortrows([LPIn, mEnOut], 'descend');
+LPOut  = tmp(:,1);
+mEnOut = tmp(:,2:end);
 end
 
 function [xANew, LPxi, iter] = RandomWalkAllDim (mEn, LP, xA)

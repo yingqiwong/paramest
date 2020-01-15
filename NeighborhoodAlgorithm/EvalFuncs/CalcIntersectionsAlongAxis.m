@@ -12,9 +12,10 @@ xji     = zeros(Npts, 2);
 xcell   = zeros(Npts, 1);
 
 % find nearest cell node by minimizing distance between v and xA
-distances       = sqrt(sum((v - xAsearch).^2, 2)); 
-[~, xcell(1)]   = min(distances);
-xAsearch(ivar)  = eps; 
+% distances       = (sum((v - xAsearch).^2, 2)); 
+% distances       = sum((v - xAsearch).^2,2) - (v(:,ivar)-xAsearch(ivar)).^2;
+% [~, xcell(1)]   = min(distances);
+% xAsearch(ivar)  = eps; 
 % add epsilon to perturb position from lower bound
 
 count = 1;
@@ -25,18 +26,19 @@ upper = 0;
 while upper < 1
     
     % calculate the upper and lower limits that intersect the current axis
-    [lower, upper, lInd, uInd] = CalcLimits(v, xAsearch, ivar);
+    [lower, xcell(count), upper, lInd, uInd] = CalcLimits(v, xAsearch, ivar);
     
     xji(count, :) = [lower, upper];
     
     if isempty(uInd), break; end
 
     % record cell number
-    xcell(count+1) = uInd;
+%     xcell(count+1) = uInd;
     
     % perturb position to just a bit to the right of the upper limit of the
     % previous cell
-    xAsearch(ivar) = upper + eps;
+    xAsearch(ivar) = upper + 1e-10;
+%     xAsearch(ivar) = v(uInd, ivar);
 
     count = count+1;
 end

@@ -1,4 +1,4 @@
-function [xji] = CalcMidpoints (v, xA, ivar)
+function [xji, k] = CalcMidpoints (v, xA, ivar)
 % calculates the midpoints between point of interest and all other cell
 % nodes projected onto the ivar-th axis 
 % (equation 19 of Sambridge 1999 I)
@@ -7,24 +7,21 @@ function [xji] = CalcMidpoints (v, xA, ivar)
 [Npts, Nvars] = size(v);
 
 % find nearest cell node by minimizing distance between v and xA
-distances = sqrt(sum((v - xA).^2, 2)); 
-[~, k]    = min(distances);
+ds     = sum((v - xA).^2, 2); 
+[~, k] = min(ds);
+vk     = v(k,:);
 
-% point of interest
-xAperp = xA;
-xAperp(ivar) = v(k,ivar);
+dk2 = norm((vk - xA)).^2 - (vk(ivar)-xA(ivar)).^2;
 
-dk2 = norm(v(k,:) - xAperp).^2;
+xji = nan(Npts, 1);
 
-xji = zeros(Npts, 1);
 for ix = 1:Npts
+    
     if ix == k, continue; end
-    
-    vperp = xA;
-    vperp(ivar) = v(ix,ivar);
-    
-    dj2 = norm(v(ix,:) - vperp).^2;
-    xji(ix) = 0.5*(v(k,ivar)+v(ix,ivar) + (dk2 - dj2)/(v(k,ivar)-v(ix,ivar)));
+
+    dj2 = norm((v(ix,:) - xA)).^2 - (v(ix,ivar) - xA(ivar)).^2;
+
+    xji(ix) = 0.5*(vk(ivar)+v(ix,ivar) + (dk2 - dj2)/(vk(ivar)-v(ix,ivar)));
     
 end
 

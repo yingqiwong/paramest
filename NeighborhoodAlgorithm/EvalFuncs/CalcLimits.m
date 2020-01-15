@@ -1,9 +1,9 @@
-function [lower, upper, lInd, uInd] = CalcLimits (v, xA, ivar)
+function [lower, cell, upper, lInd, uInd] = CalcLimits (v, xA, ivar)
 % calculates the lower and upper limits of sampling within one cell 
 % each variable has max range [0,1]
 % (equations 20, 21 in Sambridge paper)
 
-[xji] = CalcMidpoints(v, xA, ivar);
+[xji, cell] = CalcMidpoints(v, xA, ivar);
 
 LowerInds = find(xji<=xA(ivar));
 UpperInds = find(xji>=xA(ivar));

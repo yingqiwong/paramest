@@ -6,14 +6,14 @@
 clear all;
 addpath(genpath('../'));
 addpath('../../gwmcmc/');
-set(0,'defaultlinelinewidth',2);
+set(0,'defaultlinelinewidth',2, 'defaultaxesfontsize', 16);
 
 %% generate true model
 
 Nvars = 2;
 % mTrue = rand(Nvars,1);
 mTrue = [5;6];
-sigma = 2e-3;
+sigma = 1e-3;
 
 N = 101;
 r = 20*rand(N,1);
@@ -108,10 +108,10 @@ drawnow;
 
 %% catmip
 
-Ncm = 500;
+Ncm = 2000;
 mtmp = PrSmpFunc(10);
 tic
-[xcm, LLK, dhcm, allx] = catmip(PrSmpFunc, LkMdFunc, mbnds,...
+[xcm, LLK, dhcm, rtcm, allx] = catmip(PrSmpFunc, LkMdFunc, mbnds,...
     'Niter', Ncm, 'Nsteps', 5);
 RunTime(3) = toc;
 ppd_catmip = CalcPPD(xcm, mbnds, 1000);
@@ -138,7 +138,7 @@ NbrOpts.Ns    = 100;
 NbrOpts.Nr    = 50;
 NbrOpts.Niter = 19;
 NbrOpts.plot  = 0;
-NbrOpts.Ngibbs= 1000;
+NbrOpts.Ngibbs= 400;
 
 % search
 tic;

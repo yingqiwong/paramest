@@ -193,7 +193,7 @@ end
 function [xAnew] = NewSample (v, xA, ivar)
 % generates new samples in the ivar-th variable (analogous to axis)
 
-[lower, upper] = CalcLimits(v, xA, ivar);
+[lower, ~, upper] = CalcLimits(v, xA, ivar);
 xAnew = xA;
 xAnew(ivar) = lower + (upper - lower)*rand(1);
 
