@@ -179,7 +179,9 @@ for k = 1:nr         % loop through voronoi cells
     xA = v(k_ind(k),:);
     
     for in = 1:nsnr  % loop through new samples for each voronoi cell
-        for ivar = 1:Nvar % loop through all variables (i.e. axes)
+        order = randperm(Nvar);
+        
+        for ivar = order % loop through variables using different orders
             xA = NewSample(v, xA, ivar);
         end
         

@@ -13,7 +13,7 @@ set(0,'defaultlinelinewidth',2, 'defaultaxesfontsize', 16);
 Nvars = 2;
 % mTrue = rand(Nvars,1);
 mTrue = [5;6];
-sigma = 1e-3;
+sigma = 2e-3;
 
 N = 101;
 r = 20*rand(N,1);
@@ -66,7 +66,7 @@ drawnow;
 %% MCMC
 % adjust step size to get reasonable acceptance ratio ~26%
 
-x0    = rand(Nvars,1);
+x0    = mbnds(:,1) + diff(mbnds,[],2).*rand(Nvars,1);
 xstep = 0.01*diff(mbnds,[],2); 
 Niter = 10000;
 BurnIn = 0.1*Niter;
@@ -138,7 +138,9 @@ NbrOpts.Ns    = 100;
 NbrOpts.Nr    = 50;
 NbrOpts.Niter = 19;
 NbrOpts.plot  = 0;
-NbrOpts.Ngibbs= 400;
+NbrOpts.Ngibbs= 2000;
+NbrOpts.Nchain= 2;
+NbrOpts.Nppd  = 1000;
 
 % search
 tic;
@@ -151,7 +153,11 @@ AddTrueModelToPlot((mTrue-mbnds(:,1))/diff(mbnds,[],2));
 
 % appraise
 [ppd_nbr, mOut, mRealOut, LPxi, mChain] = GibbsSampler('main', mNorm, mbnds, L, NbrOpts);
-ppd_nbr = CalcPPD(mRealOut, mbnds, 1000);
+
+misfit = - L;
+[ppd_nbr2, mOut2] = gibbs_fk (mNorm, misfit, mbnds, NbrOpts);
+
+% ppd_nbr = CalcPPD(xcm, mbnds, 1000);
 
 PlotPosteriorPDF(mRealOut, mbnds, mNames, mTrue);
 
@@ -169,10 +175,11 @@ for i = 1:Nvars
     plot(ppd_gw.m(:,i),   ppd_gw.prob(:,i));
     plot(ppd_catmip.m(:,i), ppd_catmip.prob(:,i));
     plot(ppd_nbr.m(:,i),  ppd_nbr.prob(:,i));
+    plot(ppd_nbr2.m(:,i),  ppd_nbr2.prob(:,i));
     plot(mTrue(i)*ones(1,2), ylim, 'k:');
     hold off;
-    leg = legend('MCMC','GWMCMC','CATMIP','NBR1'); legend boxoff;
-    title(leg, 'NA search max iter');
+    leg = legend('MCMC','GWMCMC','CATMIP','NBR','NBR,Fukushima'); legend boxoff;
+    title(leg, 'Inversion method');
 end
 
 

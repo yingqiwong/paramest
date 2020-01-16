@@ -45,8 +45,8 @@ VarFixed = (mBnds(:,1) == mBnds(:,2));
 mVars    = mEn(:,~VarFixed);
 Nvar2    = size(mVars,2);
 
-% parfor (ich = 1:Nchain, NumWorkers)
-for ich = 1:Nchain
+parfor (ich = 1:Nchain, NumWorkers)
+% for ich = 1:Nchain
     fprintf('Evaluating chain %d of %d.\n', ich, Nchain);
     
     Chain   = zeros(Nrs, Nvar2);

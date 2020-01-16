@@ -61,7 +61,8 @@ function L = LikeFunc (dhat, data, sigma, Linputs)
 % Linputs is just a placeholder value needed by the Neighborhood algorithm.
 % Not used here.
 
-L = sum(-log(sigma(:)) - 0.5*log(2*pi) - 0.5*((data(:) - dhat{1}(:))./sigma(:)).^2 );
+% L = sum(-log(sigma(:)) - 0.5*log(2*pi) - 0.5*((data(:) - dhat{1}(:))./sigma(:)).^2 );
+L = sum(- 0.5*((data(:) - dhat{1}(:))./sigma(:)).^2 );
 end
 
 
