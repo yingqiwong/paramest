@@ -13,7 +13,7 @@ set(0,'defaultlinelinewidth',2, 'defaultaxesfontsize', 16);
 Nvars = 2;
 % mTrue = rand(Nvars,1);
 mTrue = [5;6];
-sigma = 2e-3;
+sigma = 3e-3;
 
 N = 101;
 r = 20*rand(N,1);
@@ -67,7 +67,7 @@ drawnow;
 % adjust step size to get reasonable acceptance ratio ~26%
 
 x0    = mbnds(:,1) + diff(mbnds,[],2).*rand(Nvars,1);
-xstep = 0.01*diff(mbnds,[],2); 
+xstep = 0.04*diff(mbnds,[],2); 
 Niter = 10000;
 BurnIn = 0.1*Niter;
 
@@ -178,8 +178,10 @@ for i = 1:Nvars
     plot(ppd_nbr2.m(:,i),  ppd_nbr2.prob(:,i));
     plot(mTrue(i)*ones(1,2), ylim, 'k:');
     hold off;
-    leg = legend('MCMC','GWMCMC','CATMIP','NBR','NBR,Fukushima'); legend boxoff;
+    leg = legend('MCMC','GWMCMC','CATMIP','NBR','NBR,Fukushima','location','best'); 
+    legend boxoff;
     title(leg, 'Inversion method');
+    title(mNames{i});
 end
 
 
