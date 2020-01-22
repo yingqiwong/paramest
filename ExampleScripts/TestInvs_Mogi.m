@@ -13,7 +13,7 @@ set(0,'defaultlinelinewidth',2, 'defaultaxesfontsize', 16);
 Nvars = 2;
 % mTrue = rand(Nvars,1);
 mTrue = [5;6];
-sigma = 3e-3;
+sigma = 1e-3;
 
 N = 101;
 r = 20*rand(N,1);
@@ -138,9 +138,9 @@ NbrOpts.Ns    = 100;
 NbrOpts.Nr    = 50;
 NbrOpts.Niter = 19;
 NbrOpts.plot  = 0;
-NbrOpts.Ngibbs= 2000;
+NbrOpts.Ngibbs= 500;
 NbrOpts.Nchain= 2;
-NbrOpts.Nppd  = 1000;
+NbrOpts.Nppd  = 250;
 
 % search
 tic;
@@ -168,25 +168,22 @@ disp(RunTime);
 figure; 
 set(gcf,'defaultlinelinewidth', 2, 'Position',[511   667   971   318]);
 
-for i = 1:Nvars
-    subplot(1,Nvars,i);
-    plot(ppd_mcmc.m(:,i), ppd_mcmc.prob(:,i));
+for mi = 1:Nvars
+    subplot(1,Nvars,mi);
+    plot(ppd_mcmc.m(:,mi), ppd_mcmc.prob(:,mi));
     hold on;
-    plot(ppd_gw.m(:,i),   ppd_gw.prob(:,i));
-    plot(ppd_catmip.m(:,i), ppd_catmip.prob(:,i));
-    plot(ppd_nbr.m(:,i),  ppd_nbr.prob(:,i));
-    plot(ppd_nbr2.m(:,i),  ppd_nbr2.prob(:,i));
-    plot(mTrue(i)*ones(1,2), ylim, 'k:');
+    plot(ppd_gw.m(:,mi),   ppd_gw.prob(:,mi));
+    plot(ppd_catmip.m(:,mi), ppd_catmip.prob(:,mi));
+    plot(ppd_nbr.m(:,mi),  ppd_nbr.prob(:,mi));
+    plot(ppd_nbr2.m(:,mi),  ppd_nbr2.prob(:,mi));
+    plot(mTrue(mi)*ones(1,2), ylim, 'k:');
     hold off;
+    xlim(mTrue(mi) + [-1,1]*10*std(mRealOut(:,mi)));
     leg = legend('MCMC','GWMCMC','CATMIP','NBR','NBR,Fukushima','location','best'); 
     legend boxoff;
     title(leg, 'Inversion method');
-    title(mNames{i});
+    title(mNames{mi});
 end
-
-
-
-
 
 
 

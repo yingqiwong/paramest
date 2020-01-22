@@ -55,7 +55,7 @@ parfor (ich = 1:Nchain, NumWorkers)
     tic;
     % start from high likelihood models, but skip a few so that they are
     % not too correlated.
-    m0 = mVars((ich-1)*10+1,:);   
+    m0 = mVars(ich,:);   
     [Chain(1,:), LPChain(1)] = RandomWalkAllDim(mVars, LP, m0);
     
     for in = 2:Nrs
