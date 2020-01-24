@@ -63,80 +63,56 @@ drawnow;
 
 
 %% NOW, test different inversion schemes
+% establish some common traits so that we can compare the methods
+Niter = 10000;
+
 %% MCMC
 % adjust step size to get reasonable acceptance ratio ~26%
 
 x0    = mbnds(:,1) + diff(mbnds,[],2).*rand(Nvars,1);
 xstep = 0.04*diff(mbnds,[],2); 
-Niter = 10000;
+% xstep = rand(1)*diff(mbnds,[],2); % random step size
 BurnIn = 0.1*Niter;
 
 tic;
-[x_keep,P_keep,count] = mcmc(dhatFunc,PriorFunc,LikeFunc,x0,xstep,mbnds,Niter);
+[m_mcmc,P_mcmc,count] = mcmc(dhatFunc,PriorFunc,LikeFunc,x0,xstep,mbnds,Niter);
 RunTime(1) = toc;
 fprintf('Acceptance ratio = %.2f.\n', count/Niter*100);
 
 xMAP = PlotMCMCAnalytics(x_keep, P_keep, mbnds, count, BurnIn, mNames);
-figure; ecornerplot(x_keep,'ks',true,'color',[.6 .35 .3])
-ppd_mcmc = CalcPPD(x_keep(BurnIn:end,:), mbnds, 1000);
+[ppd_mcmc.m, ppd_mcmc.prob] = CalcPDF(mbnds, m_mcmc(BurnIn:end,:), Niter/50);
 
 %% gwmcmc
 
 minit = mbnds(:,1) + diff(mbnds,[],2).*rand(Nvars,100);
 
 tic
-[mgw, pgw, dhat] =gwmcmc(minit,{PriorFunc LkMdFunc},Niter,'ThinChain',1, ...
+[m_gw, p_gw, dhat] =gwmcmc(minit,{PriorFunc LkMdFunc},Niter,'ThinChain',1, ...
     'BurnIn',0.2,'OutputData',1,'FileName','','ProgressBar',false);
 RunTime(2) = toc;
 
-mgw = mgw(:,:)'; pgw = pgw(:,:)'; dhat = dhat(:,:)';
-ppd_gw = CalcPPD(mgw, mbnds, 1000);
-figure; ecornerplot(mgw(:,:)','ks',true,'color',[.6 .35 .3])
-
-figure;
-iplt=randi(length(dhat),1,100);
-for kk=iplt
-    h=plot(r(ir),dhat{kk,2}(ir),'color',[.6 .35 .3].^.3);
-    hold on
-end
-hdat  = errorbar(r, data, sigma*ones(size(data)), '^','color',lines(1)); hold on;
-htrue = plot(r(ir), dTrue{1}(ir), 'r-', 'linewidth', 4);
-xlabel('x_1'); ylabel('y');
-legend([hdat;htrue],{'Noisy';'True'},'location','best'); 
-legend boxoff;
-drawnow;
+m_gw = m_gw(:,:)'; p_gw = p_gw(:,:)'; dhat = dhat(:,:)';
+[ppd_gw.m, ppd_gw.prob] = CalcPDF(mbnds, m_gw, Niter/50);
+% figure; ecornerplot(mgw(:,:)','ks',true,'color',[.6 .35 .3])
 
 %% catmip
 
-Ncm = 2000;
+Ncm = 400;
 mtmp = PrSmpFunc(10);
 tic
-[xcm, LLK, dhcm, rtcm, allx] = catmip(PrSmpFunc, LkMdFunc, mbnds,...
+[m_catmip, p_catmip, dhcm, rtcm, m_catmip_all] = catmip(PrSmpFunc, LkMdFunc, mbnds,...
     'Niter', Ncm, 'Nsteps', 5);
 RunTime(3) = toc;
-ppd_catmip = CalcPPD(xcm, mbnds, 1000);
-figure; ecornerplot(xcm,'ks',true,'color',[.6 .35 .3])
-PlotTemperingSteps(allx, mbnds, mNames)
-
-figure;
-iplt=randi(length(dhcm),1,40);
-for kk=iplt
-    h=plot(r(ir),dhcm{kk}(ir),'color',[.6 .35 .3].^.3);
-    hold on
-end
-hdat  = errorbar(r, data, sigma*ones(size(data)), '^','color',lines(1)); hold on;
-htrue = plot(r(ir), dTrue{1}(ir), 'r-', 'linewidth', 4);
-xlabel('x_1'); ylabel('y');
-legend([hdat;htrue],{'Noisy';'True'},'location','best'); 
-legend boxoff;
-drawnow;
+[ppd_catmip.m, ppd_catmip.prob] = CalcPDF(mbnds, m_catmip, Niter/50);
+% figure; ecornerplot(xcm,'ks',true,'color',[.6 .35 .3])
+PlotTemperingSteps(m_catmip_all, mbnds, mNames)
 
 %% Neighborhood algorithm
 
 NbrOpts       = LoadNbrOpts;
 NbrOpts.Ns    = 100;
 NbrOpts.Nr    = 50;
-NbrOpts.Niter = 19;
+NbrOpts.Niter = 19; %floor((Niter-NbrOpts.Ns)/NbrOpts.Ns);
 NbrOpts.plot  = 0;
 NbrOpts.Ngibbs= 500;
 NbrOpts.Nchain= 2;
@@ -157,10 +133,6 @@ AddTrueModelToPlot((mTrue-mbnds(:,1))/diff(mbnds,[],2));
 misfit = - L;
 [ppd_nbr2, mOut2] = gibbs_fk (mNorm, misfit, mbnds, NbrOpts);
 
-% ppd_nbr = CalcPPD(xcm, mbnds, 1000);
-
-PlotPosteriorPDF(mRealOut, mbnds, mNames, mTrue);
-
 %% compare pdfs of all the schemes
 
 disp(RunTime);
@@ -174,18 +146,31 @@ for mi = 1:Nvars
     hold on;
     plot(ppd_gw.m(:,mi),   ppd_gw.prob(:,mi));
     plot(ppd_catmip.m(:,mi), ppd_catmip.prob(:,mi));
-    plot(ppd_nbr.m(:,mi),  ppd_nbr.prob(:,mi));
-    plot(ppd_nbr2.m(:,mi),  ppd_nbr2.prob(:,mi));
+%     plot(ppd_nbr.m(:,mi),  ppd_nbr.prob(:,mi));
+%     plot(ppd_nbr2.m(:,mi),  ppd_nbr2.prob(:,mi));
     plot(mTrue(mi)*ones(1,2), ylim, 'k:');
     hold off;
-    xlim(mTrue(mi) + [-1,1]*10*std(mRealOut(:,mi)));
+    xlim(mTrue(mi) + [-1,1]*10*std(m_mcmc(:,mi)));
     leg = legend('MCMC','GWMCMC','CATMIP','NBR','NBR,Fukushima','location','best'); 
     legend boxoff;
     title(leg, 'Inversion method');
     title(mNames{mi});
 end
 
+%% plot model outputs
 
+figure;
+iplt=randi(length(dhcm),1,40);
+for kk=iplt
+    h=plot(r(ir),dhcm{kk}(ir),'color',[.6 .35 .3].^.3);
+    hold on
+end
+hdat  = errorbar(r, data, sigma*ones(size(data)), '^','color',lines(1)); hold on;
+htrue = plot(r(ir), dTrue{1}(ir), 'r-', 'linewidth', 4);
+xlabel('x_1'); ylabel('y');
+legend([hdat;htrue],{'Noisy';'True'},'location','best'); 
+legend boxoff;
+drawnow;
 
 
 

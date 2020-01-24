@@ -53,8 +53,7 @@ parfor (ich = 1:Nchain, NumWorkers)
     LPChain = zeros(Nrs, 1);
     
     tic;
-    % start from high likelihood models, but skip a few so that they are
-    % not too correlated.
+    % start from high likelihood models
     m0 = mVars(ich,:);   
     [Chain(1,:), LPChain(1)] = RandomWalkAllDim(mVars, LP, m0);
     
@@ -74,14 +73,15 @@ LPxi = cell2mat(mChain(:,2));
 
 mRealOut = ConvertToRealUnits(mOut, mBnds);
 
-fprintf('Running ks density...\n');
-ppd.m    = zeros(Nppd, Nvar);
-ppd.prob = zeros(Nppd, Nvar);
-for ivar = 1:Nvar
-    ppd.m(:,ivar)    = linspace(mBnds(ivar,1), mBnds(ivar,2),Nppd)';
-    ppd.prob(:,ivar) = ksdensity(mRealOut(:,ivar),ppd.m(:,ivar));
-end
-fprintf('Finished running ks density.\n');
+fprintf('Calculating probability densities...\n');
+[ppd.m, ppd.prob] = CalcPDF(mBnds, mRealOut, 200);
+% ppd.m    = zeros(Nppd, Nvar);
+% ppd.prob = zeros(Nppd, Nvar);
+% for ivar = 1:Nvar
+%     ppd.m(:,ivar)    = linspace(mBnds(ivar,1), mBnds(ivar,2),Nppd)';
+%     ppd.prob(:,ivar) = ksdensity(mRealOut(:,ivar),ppd.m(:,ivar));
+% end
+fprintf('Finished calculating probability densities.\n');
 delete(gcp('nocreate'))
 
 end
