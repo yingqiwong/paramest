@@ -33,6 +33,7 @@ function [mReal, mNorm, dhat, L, Lmax, flag, RunTime] = main (...
 % YQW June 24, 2019
 
 addpath([fileparts(which(mfilename)) '/EvalFuncs/']);
+rng('shuffle'); % just to make sure you don't repeat the same seed
 
 Ns    = NbrOpts.Ns;
 Nr    = NbrOpts.Nr;
