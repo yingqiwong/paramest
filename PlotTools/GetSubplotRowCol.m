@@ -8,7 +8,7 @@ if nargin > 1
     end
 else
     Nrow = floor(sqrt(N));
-    Ncol = ceil(sqrt(N));
+    Ncol = ceil(N/Nrow);
 end
 
 end

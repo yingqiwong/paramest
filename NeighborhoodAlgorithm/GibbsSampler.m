@@ -94,6 +94,7 @@ mEnOut = mEnIn;
 
 % remove unevaluated points
 mEnOut(isnan(LPIn),:) = [];
+LPIn(isnan(LPIn)) = [];
 
 % remove models that are out of bounds
 RmFlag = zeros(size(mEnOut,1),1);
@@ -101,6 +102,7 @@ for mi = 1:size(mEnOut,1)
     RmFlag(mi) = (any(mEnOut(mi,:) < 0)) || (any(mEnOut(mi,:)) > 1);
 end
 mEnOut(RmFlag==1,:) = [];
+LPIn(RmFlag==1) = [];
 
 % sort by decreasing log-probability
 tmp = sortrows([LPIn, mEnOut], 'descend');
