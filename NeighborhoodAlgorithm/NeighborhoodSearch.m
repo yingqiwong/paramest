@@ -13,6 +13,7 @@ function [mReal, mNorm, dhat, L, Lmax, flag, RunTime] = main (...
 % mbnds     lower, upper bounds of variables (Nvar x 2)
 %           if you want to fix a variable, just set lower = upper
 % mNames    parameter names
+% mStart    starting set of models (Ns x Nvar or EMPTY)
 % NbrOpts   Options:
 %           Ns        number of new samples at each interation (scalar)
 %           Nr        number of cells to sample at each iteration (scalar)
