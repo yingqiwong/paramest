@@ -105,7 +105,7 @@ mEnOut(RmFlag==1,:) = [];
 LPIn(RmFlag==1) = [];
 
 % sort by decreasing log-probability
-tmp = sortrows([LPIn, mEnOut], 'descend');
+tmp = sortrows([LPIn, mEnOut], 'descend', 'MissingPlacement', 'last');
 LPOut  = tmp(:,1);
 mEnOut = tmp(:,2:end);
 end
