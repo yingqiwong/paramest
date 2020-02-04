@@ -3,7 +3,7 @@ function varargout = NeighborhoodSearch (varargin)
 end
 
 function [mReal, mNorm, dhat, L, Lmax, flag, RunTime] = main (...
-    dhatFunc, LikeFunc, mbnds, mNames, NbrOpts, Ndata, varargin)
+    dhatFunc, LikeFunc, mbnds, mNames, mStart, NbrOpts, Ndata, varargin)
 % evaluates the neighborhood direct search algorithm from Sambridge 1999 I
 % assumes uniform prior - should this part allow different priors?
 % 
@@ -61,8 +61,14 @@ Lmax   = nan*ones(1+Niter,1);
 flag   = L;
 RunTime= L;
 
-% randomly sample model space, but fix variables where upper = lower bounds
-mNorm(1:Ns,VarVary) = rand(Ns,length(VarVary));
+% starting set of models
+if isempty(mStart)
+    % randomly sample model space, but fix variables where upper = lower bounds
+    mNorm(1:Ns,VarVary) = rand(Ns,length(VarVary));
+else
+    % if you already have a set of models that you want to start from
+    mNorm(1:Ns,:) = mStart(1:Ns,:);
+end
 
 fprintf('Generating initial %d random samples...\n', Ns);
 [mReal(1:Ns,:), dhat(1:Ns,:), flag(1:Ns), RunTime(1:Ns), L(1:Ns)] = RunForwardModel(...
@@ -73,7 +79,7 @@ fprintf('Finished generating initial random samples\n');
 
 if NbrOpts.save
     save(NbrOpts.filename, 'mNames', 'mbnds', 'NbrOpts', ...
-        'mNorm', 'mReal', 'dhat', 'L', 'Lmax', 'flag', 'RunTime'); 
+        'mNorm', 'mReal', 'dhat', 'L', 'Lmax', 'flag', 'RunTime');
 end
 
 % neighborhood sampling
