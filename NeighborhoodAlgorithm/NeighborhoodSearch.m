@@ -3,7 +3,7 @@ function varargout = NeighborhoodSearch (varargin)
 end
 
 function [mReal, mNorm, dhat, L, Lmax, flag, RunTime] = main (...
-    dhatFunc, LikeFunc, mbnds, mNames, mStart, NbrOpts, Ndata, varargin)
+    dhatFunc, LikeFunc, mbnds, mNames, mIn, NbrOpts, Ndata, varargin)
 % evaluates the neighborhood direct search algorithm from Sambridge 1999 I
 % assumes uniform prior - should this part allow different priors?
 %
@@ -13,8 +13,9 @@ function [mReal, mNorm, dhat, L, Lmax, flag, RunTime] = main (...
 % mbnds     lower, upper bounds of variables (Nvar x 2)
 %           if you want to fix a variable, just set lower = upper
 % mNames    parameter names
-% mStart    starting set of models, normalized (Ns x Nvar or EMPTY)
-% NbrOpts   Options:
+% mIn       structure of inputs from previous runs, or EMPTY
+%           (includes mNorm, mReal, dhat, L, Lmax, flag, RunTime)
+% NbrOpts   Options structure:
 %           Ns        number of new samples at each interation (scalar)
 %           Nr        number of cells to sample at each iteration (scalar)
 %           Niter     resampling interations
@@ -51,6 +52,7 @@ end
 Nvar        = size(mbnds,1);
 VarVary     = find(diff(mbnds,[],2)>0);
 ns_adjusted = floor(Ns/Nr)*Nr;  % enforce that this is an integer
+rst_opt     = ~isempty(mIn);    % whether we are trying to restart a run
 
 % initialize matrices
 mNorm  = ones(Ns + ns_adjusted*Niter, Nvar);
@@ -61,21 +63,35 @@ Lmax   = nan*ones(1+Niter,1);
 flag   = L;
 RunTime= L;
 
-% starting set of models
-if isempty(mStart)
+if (rst_opt) 
+    % want to restart a run
+    Ncurr    = length(mIn.L);
+    inr_curr = (Ncurr - Ns)/ns_adjusted;
+    
+    mNorm(1:Ncurr,:) = mIn.mNorm;
+    mReal(1:Ncurr,:) = mIn.mReal;
+    dhat(1:Ncurr,:)  = mIn.dhat;
+    L(1:Ncurr)       = mIn.L;
+    Lmax(1:inr_curr) = mIn.Lmax;
+    flag(1:Ncurr)    = mIn.flag;
+    RunTime(1:Ncurr) = mIn.RunTime;
+    
+    [inds, Lmax(inr_curr+1)] = Lsort(L(1:Ncurr));
+    fprintf('Max log-likelihood = %.2e.\n', Lmax(inr_curr+1));
+else
+    % NEW RUN
     % randomly sample model space, but fix variables where upper = lower bounds
     mNorm(1:Ns,VarVary) = rand(Ns,length(VarVary));
-else
-    % if you already have a set of models that you want to start from
-    mNorm(1:Ns,:) = mStart(1:Ns,:);
+    inr_curr = 0;
+    
+    fprintf('Generating initial %d random samples...\n', Ns);
+    [mReal(1:Ns,:), dhat(1:Ns,:), flag(1:Ns), RunTime(1:Ns), L(1:Ns)] = RunForwardModel(...
+        dhatFunc, LikeFunc, mNorm(1:Ns,:), mbnds, Ns, Ndata, NumWorkers, varargin{:});
+    [inds, Lmax(1)] = Lsort(L(1:Ns));
+    fprintf('Max log-likelihood = %.2e.\n', Lmax(1));
+    fprintf('Finished generating initial random samples\n');
+    
 end
-
-fprintf('Generating initial %d random samples...\n', Ns);
-[mReal(1:Ns,:), dhat(1:Ns,:), flag(1:Ns), RunTime(1:Ns), L(1:Ns)] = RunForwardModel(...
-    dhatFunc, LikeFunc, mNorm(1:Ns,:), mbnds, Ns, Ndata, NumWorkers, varargin{:});
-[inds, Lmax(1)] = Lsort(L(1:Ns));
-fprintf('Max log-likelihood = %.2e.\n', Lmax(1));
-fprintf('Finished generating initial random samples\n');
 
 if NbrOpts.save
     save(NbrOpts.filename, 'mNames', 'mbnds', 'NbrOpts', ...
@@ -84,7 +100,7 @@ end
 
 % neighborhood sampling
 fprintf('Generating %d total samples for %d low misfit cells...\n', Ns, Nr);
-for inr = 1:Niter
+for inr = (inr_curr+1):Niter
     fprintf('Neighborhood sampling iteration %d of %d.\n', inr, Niter);
     vInd = Ns + (inr-1)*ns_adjusted;
     
