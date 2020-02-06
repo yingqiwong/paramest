@@ -111,31 +111,31 @@ PlotTemperingSteps(m_catmip_all, mbnds, mNames)
 %% Neighborhood algorithm
 
 NbrOpts       = LoadNbrOpts;
-NbrOpts.Ns    = 100;
+NbrOpts.Ns    = 200;
 NbrOpts.Nr    = 20;
 NbrOpts.Niter = 20; %floor((Niter-NbrOpts.Ns)/NbrOpts.Ns);
 NbrOpts.plot  = 0;
 NbrOpts.Ngibbs= 1000;
-NbrOpts.Nchain= 8;
-NbrOpts.Nppd  = 1000;
+NbrOpts.Nchain= 2;
+NbrOpts.Nppd  = 400;
 
 % search
 tic;
 [mReal, mNorm, ~, L, ~, ~, ~] = NeighborhoodSearch('main',...
-    dhatFunc, LikeFunc, mbnds, mNames, NbrOpts, 1);
+    dhatFunc, LikeFunc, mbnds, mNames, [], NbrOpts, 1);
 RunTime(4) = toc;
 
 PlotNAIterations(mNorm, mNames, mbnds, L, NbrOpts, 1:2:20)
 AddTrueModelToPlot((mTrue-mbnds(:,1))/diff(mbnds,[],2));
-figure; plot(mNorm(:,1), L, '+');
+% figure; plot(mNorm(:,1), L, '+');
 
 % appraise
 [ppd_nbr, mOut, mRealOut, LPxi, mChain] = GibbsSampler('main', mNorm, mbnds, L, NbrOpts);
 
-misfit = - L;
-tic
-[ppd_nbr2, mOut2] = gibbs_fk (mNorm, misfit, mbnds, NbrOpts);
-toc
+% misfit = - L;
+% tic
+% [ppd_nbr2, mOut2] = gibbs_fk (mNorm, misfit, mbnds, NbrOpts);
+% toc
 
 %% compare pdfs of all the schemes
 
@@ -157,7 +157,7 @@ for mi = 1:Nvars
     plot(ppd_mcmc.m(:,mi), ppd_mcmc.prob(:,mi));
     plot(ppd_gw.m(:,mi),   ppd_gw.prob(:,mi));
     plot(ppd_catmip.m(:,mi), ppd_catmip.prob(:,mi));
-%     plot(ppd_nbr.m(:,mi),  ppd_nbr.prob(:,mi));
+    plot(ppd_nbr.m(:,mi),  ppd_nbr.prob(:,mi));
 %     plot(ppd_nbr2.m(:,mi),  ppd_nbr2.prob(:,mi));
     plot(mlin(mi)*ones(1,2), ylim, 'k:');
     hold off;

@@ -79,7 +79,7 @@ tic;
 RunTime(1) = toc;
 fprintf('Acceptance ratio = %.2f.\n', count/Niter*100);
 
-xMAP = PlotMCMCAnalytics(x_keep, P_keep, mbnds, count, BurnIn, mNames);
+xMAP = PlotMCMCAnalytics(m_mcmc, P_keep, mbnds, count, BurnIn, mNames);
 [ppd_mcmc.m, ppd_mcmc.prob] = CalcPDF(mbnds, m_mcmc(BurnIn:end,:), Niter/50);
 
 %% gwmcmc
@@ -112,7 +112,7 @@ PlotTemperingSteps(m_catmip_all, mbnds, mNames)
 NbrOpts       = LoadNbrOpts;
 NbrOpts.Ns    = 100;
 NbrOpts.Nr    = 50;
-NbrOpts.Niter = 19; %floor((Niter-NbrOpts.Ns)/NbrOpts.Ns);
+NbrOpts.Niter = 8; %floor((Niter-NbrOpts.Ns)/NbrOpts.Ns);
 NbrOpts.plot  = 0;
 NbrOpts.Ngibbs= 500;
 NbrOpts.Nchain= 2;
@@ -121,10 +121,10 @@ NbrOpts.Nppd  = 250;
 % search
 tic;
 [mReal, mNorm, ~, L, ~, ~, ~] = NeighborhoodSearch('main',...
-    dhatFunc, LikeFunc, mbnds, mNames, NbrOpts, 1);
+    dhatFunc, LikeFunc, mbnds, mNames, [], NbrOpts, 1);
 RunTime(4) = toc;
 
-PlotNAIterations(mNorm, mNames, mbnds, L, NbrOpts, 1:20)
+PlotNAIterations(mNorm, mNames, mbnds, L, NbrOpts, 1:NbrOpts.Niter)
 AddTrueModelToPlot((mTrue-mbnds(:,1))/diff(mbnds,[],2));
 
 % appraise
@@ -146,7 +146,7 @@ for mi = 1:Nvars
     hold on;
     plot(ppd_gw.m(:,mi),   ppd_gw.prob(:,mi));
     plot(ppd_catmip.m(:,mi), ppd_catmip.prob(:,mi));
-%     plot(ppd_nbr.m(:,mi),  ppd_nbr.prob(:,mi));
+    plot(ppd_nbr.m(:,mi),  ppd_nbr.prob(:,mi));
 %     plot(ppd_nbr2.m(:,mi),  ppd_nbr2.prob(:,mi));
     plot(mTrue(mi)*ones(1,2), ylim, 'k:');
     hold off;

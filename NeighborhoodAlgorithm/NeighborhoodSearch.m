@@ -6,14 +6,14 @@ function [mReal, mNorm, dhat, L, Lmax, flag, RunTime] = main (...
     dhatFunc, LikeFunc, mbnds, mNames, mStart, NbrOpts, Ndata, varargin)
 % evaluates the neighborhood direct search algorithm from Sambridge 1999 I
 % assumes uniform prior - should this part allow different priors?
-% 
+%
 % INPUTS
 % dhatFunc  function handle that predicts data
 % LikeFunc  function handle that calculates likelihood (= - misfit)
 % mbnds     lower, upper bounds of variables (Nvar x 2)
 %           if you want to fix a variable, just set lower = upper
 % mNames    parameter names
-% mStart    starting set of models (Ns x Nvar or EMPTY)
+% mStart    starting set of models, normalized (Ns x Nvar or EMPTY)
 % NbrOpts   Options:
 %           Ns        number of new samples at each interation (scalar)
 %           Nr        number of cells to sample at each iteration (scalar)
@@ -23,17 +23,17 @@ function [mReal, mNorm, dhat, L, Lmax, flag, RunTime] = main (...
 %           Parallel  if want to run models in parallel
 % Ndata     number of datasets (for joint inversions)
 % varargin  any other input values for dhatFunc
-% 
+%
 % OUTPUTS
 % vReal     models in real units (ns*(nRS+1) x Nvar)
 % vNorm     models in normalized units (0-1) (ns*(nRS+1) x Nvar)
 % L         log likelihood (ns*(nRS+1) x 1)
 % Lmax      max log likelihood(nRS+1 x 1)
 % flag      whether model ran successfully (ns*(nRS+1) x 1)
-% 
+%
 % YQW June 24, 2019
 
-addpath([fileparts(which(mfilename)) '/EvalFuncs/']);
+% addpath([fileparts(which(mfilename)) '/EvalFuncs/']);
 rng('shuffle'); % just to make sure you don't repeat the same seed
 
 Ns    = NbrOpts.Ns;
@@ -41,7 +41,7 @@ Nr    = NbrOpts.Nr;
 Niter = NbrOpts.Niter;
 
 if (NbrOpts.Parallel)
-    ParpoolObj = parpool(min([NbrOpts.Ncores,NbrOpts.Ns])); 
+    ParpoolObj = parpool(min([NbrOpts.Ncores,NbrOpts.Ns]));
     NumWorkers = ParpoolObj.NumWorkers;
 else
     NumWorkers = 0;
@@ -49,8 +49,7 @@ end
 
 % some helpful initial analysis
 Nvar        = size(mbnds,1);
-BndsDiff    = diff(mbnds,[],2);
-VarVary     = find(BndsDiff>0);
+VarVary     = find(diff(mbnds,[],2)>0);
 ns_adjusted = floor(Ns/Nr)*Nr;  % enforce that this is an integer
 
 % initialize matrices
@@ -106,13 +105,13 @@ for inr = 1:Niter
     
     % find maximum likelihood
     [inds, Lmax(1+inr)] = Lsort(L(1:(vInd+ns_adjusted)));
-    fprintf('Max log-likelihood = %.2e.\n', Lmax(inr+1));   
+    fprintf('Max log-likelihood = %.2e.\n', Lmax(inr+1));
     
     if NbrOpts.save
         save(NbrOpts.filename, 'mNames', 'mbnds', 'NbrOpts', ...
             'mNorm', 'mReal', 'dhat', 'L', 'Lmax', 'flag', 'RunTime');
     end
-
+    
 end
 fprintf('Finished neighborhood sampling.\n');
 
@@ -134,13 +133,13 @@ mReal = TransformToRealUnits(vNorm, mbnds);
 parfor (ins = 1:Ns, NumWorkers)
     
     tic;
-    [dhatIter, flag(ins), Linputs] = dhatFunc(mReal(ins,:), varargin{:});    
+    [dhatIter, flag(ins), Linputs] = dhatFunc(mReal(ins,:), varargin{:});
     RunTime(ins) = toc;
     
     if flag(ins)==1
         dhat(ins,:) = dhatIter;
-        L(ins)      = LikeFunc(dhatIter, Linputs); 
-    end  
+        L(ins)      = LikeFunc(dhatIter, Linputs);
+    end
 end
 
 end
@@ -163,34 +162,64 @@ end
 
 function [NewSamps] = NeighborhoodSampling (v, k_ind, ns)
 % samples Voronoi cells to generate new samples for the next misfit
-% evaluation. 
+% evaluation.
 % All samples are of range (0,1). Transformation to real units is done
 % outside this function to calculate dhat and likelihood.
-% 
+%
 % INPUTS
 % x     coordinates of points (Npts x Nvars)
 % k_ind index of cells that you want to generate new samples for (nr x 1)
 % ns    total number of new samples (scalar)
-% 
+%
 % OUTPUTS
 % NewSamps  Matrix of new samples (N*nr x Nvars)
-% 
+%
 
 nr   = length(k_ind);
 nsnr = floor(ns/nr); % number of new samples per cell
 
-Nvar     = size(v,2);
-NewSamps = zeros(nr*nsnr, Nvar);
+[Npts,Nvar] = size(v);
+NewSamps    = zeros(nr*nsnr, Nvar);
 
 
 for k = 1:nr         % loop through voronoi cells
-    xA = v(k_ind(k),:);
+    vk = v(k_ind(k),:);
+    xA = vk;
     
     for in = 1:nsnr  % loop through new samples for each voronoi cell
         order = randperm(Nvar);
         
-        for ivar = order % loop through variables using different orders
-            xA = NewSample(v, xA, ivar);
+        % initialize dj's
+        dj2 = zeros(Npts,1);
+        for ix = 1:Npts
+            dj2(ix) = norm((v(ix,:) - xA)).^2 - (v(ix,order(1)) - xA(order(1))).^2;
+        end
+        VarCount = 1; % counter for order vector
+        
+        for ivar = order 
+            % loop through variables using different orders to calculate
+            % intersection points
+            
+            dk2 = dj2(k_ind(k));
+            xji = nan(Npts, 1);
+            
+            for ix = 1:Npts
+                if ix == k_ind(k), continue; end
+                
+                if VarCount > 1 % update dj2 for next model parameter
+                    dj2(ix) = dj2(ix) ...
+                        + (v(ix,order(VarCount-1)) - xA(order(VarCount-1))).^2 ...
+                        - (v(ix,order(VarCount)) - xA(order(VarCount))).^2;
+                end
+                
+                xji(ix) = 0.5*(vk(ivar)+v(ix,ivar) + (dk2 - dj2(ix))/(vk(ivar)-v(ix,ivar)));
+            end
+            
+            lower = max([xji(xji<=xA(ivar)); 0]);
+            upper = min([xji(xji>=xA(ivar)); 1]);
+            
+            xA(ivar) = lower + (upper - lower)*rand(1);
+            VarCount = VarCount+1;
         end
         
         NewSamps((k-1)*nsnr+in, :) = xA;
@@ -199,15 +228,3 @@ end
 
 
 end
-
-function [xAnew] = NewSample (v, xA, ivar)
-% generates new samples in the ivar-th variable (analogous to axis)
-
-[lower, ~, upper] = CalcLimits(v, xA, ivar);
-xAnew = xA;
-xAnew(ivar) = lower + (upper - lower)*rand(1);
-
-end
-
-
-
