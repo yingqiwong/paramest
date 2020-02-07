@@ -69,7 +69,7 @@ end
 % output matrix of all chains
 mOut = zeros(Nchain*Nrs, Nvar);
 mOut(:,~VarFixed) = cell2mat(mChain(:,1));
-mOut(:,VarFixed)  = mBnds(VarFixed,1);
+mOut(:,VarFixed)  = mBnds(VarFixed,1)'.*ones(Nchain*Nrs, sum(VarFixed));
 LPxi = cell2mat(mChain(:,2));
 
 mRealOut = ConvertToRealUnits(mOut, mBnds);
