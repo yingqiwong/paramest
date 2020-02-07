@@ -178,69 +178,70 @@ end
 
 function [NewSamps] = NeighborhoodSampling (v, k_ind, ns)
 % samples Voronoi cells to generate new samples for the next misfit
-% evaluation.
+% evaluation. 
 % All samples are of range (0,1). Transformation to real units is done
 % outside this function to calculate dhat and likelihood.
-%
+% 
 % INPUTS
 % x     coordinates of points (Npts x Nvars)
 % k_ind index of cells that you want to generate new samples for (nr x 1)
 % ns    total number of new samples (scalar)
-%
+% 
 % OUTPUTS
 % NewSamps  Matrix of new samples (N*nr x Nvars)
-%
+% 
 
 nr   = length(k_ind);
 nsnr = floor(ns/nr); % number of new samples per cell
 
-[Npts,Nvar] = size(v);
-NewSamps    = zeros(nr*nsnr, Nvar);
+Nvar     = size(v,2);
+NewSamps = zeros(nr*nsnr, Nvar);
 
 
 for k = 1:nr         % loop through voronoi cells
-    vk = v(k_ind(k),:);
-    xA = vk;
+    xA = v(k_ind(k),:);
     
     for in = 1:nsnr  % loop through new samples for each voronoi cell
         order = randperm(Nvar);
         
-        % initialize dj's
-        dj2 = zeros(Npts,1);
-        for ix = 1:Npts
-            dj2(ix) = norm((v(ix,:) - xA)).^2 - (v(ix,order(1)) - xA(order(1))).^2;
-        end
-        VarCount = 1; % counter for order vector
-        
-        for ivar = order 
-            % loop through variables using different orders to calculate
-            % intersection points
-            
-            dk2 = dj2(k_ind(k));
-            xji = nan(Npts, 1);
-            
-            for ix = 1:Npts
-                if ix == k_ind(k), continue; end
-                
-                if VarCount > 1 % update dj2 for next model parameter
-                    dj2(ix) = dj2(ix) ...
-                        + (v(ix,order(VarCount-1)) - xA(order(VarCount-1))).^2 ...
-                        - (v(ix,order(VarCount)) - xA(order(VarCount))).^2;
-                end
-                
-                xji(ix) = 0.5*(vk(ivar)+v(ix,ivar) + (dk2 - dj2(ix))/(vk(ivar)-v(ix,ivar)));
-            end
-            
-            lower = max([xji(xji<=xA(ivar)); 0]);
-            upper = min([xji(xji>=xA(ivar)); 1]);
-            
-            xA(ivar) = lower + (upper - lower)*rand(1);
-            VarCount = VarCount+1;
+        for ivar = order % loop through variables using different orders
+            xA = NewSample(v, xA, ivar);
         end
         
         NewSamps((k-1)*nsnr+in, :) = xA;
     end
 end
 
+
+end
+
+function [xAnew] = NewSample (v, xA, ivar)
+% generates new samples in the ivar-th variable (analogous to axis)
+
+[Npts, ~] = size(v);
+
+% find nearest cell node by minimizing distance between v and xA
+ds     = sum((v - xA).^2, 2); 
+[~, k] = min(ds);
+vk     = v(k,:);
+
+dk2 = norm((vk - xA)).^2 - (vk(ivar)-xA(ivar)).^2;
+
+xji = nan(Npts, 1);
+
+for ix = 1:Npts
+    
+    if ix == k, continue; end
+
+    dj2 = norm((v(ix,:) - xA)).^2 - (v(ix,ivar) - xA(ivar)).^2;
+    xji(ix) = 0.5*(vk(ivar)+v(ix,ivar) + (dk2 - dj2)/(vk(ivar)-v(ix,ivar)));
+    
+end
+
+lower = max([xji(xji<=xA(ivar)); 0]);
+upper = min([xji(xji>=xA(ivar)); 1]);
+
+xAnew = xA;
+xAnew(ivar) = lower + (upper - lower)*rand(1);
 
 end
