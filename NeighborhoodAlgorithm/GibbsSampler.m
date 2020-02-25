@@ -21,7 +21,7 @@ function [ppd, mOut, mRealOut, LPxi, mChain] = main (mEn, mBnds, LP, NbrOpts)
 
 delete(gcp('nocreate'))
 addpath([fileparts(which(mfilename)) '/EvalFuncs/']);
-rng('shuffle');
+% rng('shuffle');
 
 [mEn, LP] = CleanEnsemblePts(mEn, LP);
 
@@ -76,12 +76,6 @@ mRealOut = ConvertToRealUnits(mOut, mBnds);
 
 fprintf('Calculating probability densities...\n');
 [ppd.m, ppd.prob] = CalcPDF(mBnds, mRealOut, 200);
-% ppd.m    = zeros(Nppd, Nvar);
-% ppd.prob = zeros(Nppd, Nvar);
-% for ivar = 1:Nvar
-%     ppd.m(:,ivar)    = linspace(mBnds(ivar,1), mBnds(ivar,2),Nppd)';
-%     ppd.prob(:,ivar) = ksdensity(mRealOut(:,ivar),ppd.m(:,ivar));
-% end
 fprintf('Finished calculating probability densities.\n');
 delete(gcp('nocreate'))
 
@@ -94,7 +88,7 @@ mEnOut = mEnIn;
 
 % remove unevaluated points
 mEnOut(isnan(LPIn),:) = [];
-LPIn(isnan(LPIn)) = [];
+LPIn(isnan(LPIn))     = [];
 
 % remove models that are out of bounds
 RmFlag = zeros(size(mEnOut,1),1);

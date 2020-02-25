@@ -8,6 +8,8 @@ Ncol = ceil(Nvar/Nrow);
 [~, xMAPind] = max(P);
 xMAP = x(xMAPind,:);
 
+VarVary = diff(mbnds,[],2)>0;
+
 figure;
 for mi = 1:Nvar
     subplot(Nrow,Ncol,mi);
@@ -17,6 +19,8 @@ for mi = 1:Nvar
     plot(mbnds(mi,2)*ones(1,2), ylim, 'r-');
     plot(xMAP(mi)*ones(1,2), ylim, 'r:');
     hold off;
+    
+    if VarVary(mi); xlim(mbnds(mi,:)); end
     title(VarNames{mi});
 end
 suptitle('Posterior PDFs');

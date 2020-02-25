@@ -65,7 +65,7 @@ for i=1:Niter
     
     %Evaluate forward model for the proposed model x2 that is within bounds
     [dhat, dflag, Linputs] = dhatFunc(x2, varargin{:});
-    if dflag~=1, continue; end
+%     if dflag~=1, continue; end
 
     %Evaluate probability of the model given the data using Bayesian
     %approach: P(x2|d)~ L(d|x2) P(x2)
