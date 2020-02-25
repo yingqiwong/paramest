@@ -21,7 +21,7 @@ function [ppd, mOut, mRealOut, LPxi, mChain] = main (mEn, mBnds, LP, NbrOpts)
 
 delete(gcp('nocreate'))
 addpath([fileparts(which(mfilename)) '/EvalFuncs/']);
-% rng('shuffle');
+rng('shuffle');
 
 [mEn, LP] = CleanEnsemblePts(mEn, LP);
 
