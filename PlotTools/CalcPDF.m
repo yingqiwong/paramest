@@ -4,6 +4,8 @@ function [m, prob] = CalcPDF (mbnds, models, Nbins)
 % converts ensemble of models into a probability density function with
 % points specified at m. 
 
+if isempty(mbnds), mbnds = [min(models), max(models)]; end
+
 [Niter, Nvar] = size(models);
 m    = zeros(Nbins, Nvar); % bin centers
 prob = zeros(Nbins, Nvar); % probabilities

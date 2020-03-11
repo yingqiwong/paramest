@@ -164,7 +164,7 @@ while r > (LPxi-Pmax)
     iter  = iter + 1;
     xANew = rand(1);    % random walk
     LPxi  = GetConditionalProbability(xji, LP, xANew);
-    r     = log(rand(1));
+    r     = log(rand(1));  % base exp
 end
 
 
