@@ -148,13 +148,17 @@ mReal = TransformToRealUnits(vNorm, mbnds);
 
 parfor (ins = 1:Ns, NumWorkers)
     
+    df = dhatFunc;
+    Lf = LikeFunc;
+    inputs = varargin;
+    
     tic;
-    [dhatIter, flag(ins), Linputs] = dhatFunc(mReal(ins,:), varargin{:});
+    [dhatIter, flag(ins), Linputs] = df(mReal(ins,:), inputs{:});
     RunTime(ins) = toc;
     
     if flag(ins)==1
         dhat(ins,:) = dhatIter;
-        L(ins)      = LikeFunc(dhatIter, Linputs);
+        L(ins)      = Lf(dhatIter, Linputs);
     end
 end
 
