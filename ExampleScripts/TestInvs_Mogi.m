@@ -12,7 +12,7 @@ set(0,'defaultlinelinewidth',2, 'defaultaxesfontsize', 16);
 
 Nvars = 2;
 % mTrue = rand(Nvars,1);
-mTrue = [5;6];
+mTrue = [4;5];
 sigma = 1e-3;
 
 N = 101;
@@ -64,13 +64,13 @@ drawnow;
 
 %% NOW, test different inversion schemes
 % establish some common traits so that we can compare the methods
-Niter = 10000;
+Niter = 1000000;
 
 %% MCMC
 % adjust step size to get reasonable acceptance ratio ~26%
 
 x0    = mbnds(:,1) + diff(mbnds,[],2).*rand(Nvars,1);
-xstep = 0.04*diff(mbnds,[],2); 
+xstep = 0.02*diff(mbnds,[],2); 
 % xstep = rand(1)*diff(mbnds,[],2); % random step size
 BurnIn = 0.1*Niter;
 
@@ -79,7 +79,7 @@ tic;
 RunTime(1) = toc;
 fprintf('Acceptance ratio = %.2f.\n', count/Niter*100);
 
-xMAP = PlotMCMCAnalytics(m_mcmc, P_keep, mbnds, count, BurnIn, mNames);
+xMAP = PlotMCMCAnalytics(m_mcmc, P_mcmc, mbnds, count, BurnIn, mNames);
 [ppd_mcmc.m, ppd_mcmc.prob] = CalcPDF(mbnds, m_mcmc(BurnIn:end,:), Niter/50);
 
 %% gwmcmc
@@ -110,9 +110,9 @@ PlotTemperingSteps(m_catmip_all, mbnds, mNames)
 %% Neighborhood algorithm
 
 NbrOpts       = LoadNbrOpts;
-NbrOpts.Ns    = 100;
-NbrOpts.Nr    = 50;
-NbrOpts.Niter = 8; %floor((Niter-NbrOpts.Ns)/NbrOpts.Ns);
+NbrOpts.Ns    = 8;
+NbrOpts.Nr    = 8;
+NbrOpts.Niter = 10; %floor((Niter-NbrOpts.Ns)/NbrOpts.Ns);
 NbrOpts.plot  = 0;
 NbrOpts.Ngibbs= 500;
 NbrOpts.Nchain= 2;
@@ -125,7 +125,9 @@ tic;
 RunTime(4) = toc;
 
 PlotNAIterations(mNorm, mNames, mbnds, L, NbrOpts, 1:NbrOpts.Niter)
-AddTrueModelToPlot((mTrue-mbnds(:,1))/diff(mbnds,[],2));
+mTrueNorm = (mTrue-mbnds(:,1))/diff(mbnds,[],2);
+AddTrueModelToPlot(mTrueNorm);
+PlayNeighborhoodSearch(mNorm, {'Parameter 1', 'Parameter 2'}, mbnds, L, NbrOpts, 1:NbrOpts.Niter, mTrueNorm, 'tmp')
 
 % appraise
 [ppd_nbr, mOut, mRealOut, LPxi, mChain] = GibbsSampler('main', mNorm, mbnds, L, NbrOpts);
@@ -174,9 +176,17 @@ drawnow;
 
 
 
+%% junk
 
+figure;
+subplot(211);
+histogram(m_mcmc(BurnIn:end,1), 200, 'EdgeColor', 'none');
+xlim([3.5,4.5]);
+set(gca,'box','off','xtick', [], 'ytick', []);
+xlabel('Parameter 1');
 
-
-
-
-
+subplot(212);
+histogram(m_mcmc(BurnIn:end,2), 200, 'EdgeColor', 'none');
+xlim([4,5.5]);
+set(gca,'box','off','xtick', [], 'ytick', []);
+xlabel('Parameter 2');

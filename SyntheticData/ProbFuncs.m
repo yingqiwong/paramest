@@ -24,7 +24,7 @@ switch distrib
         end
     case 'Uniform'
         % here mu = bounds (Nvar x 1)
-        pvar = double(model>mu(:,1) & model<mu(:,2));
+        pvar = double(model>=mu(:,1) & model<=mu(:,2));
 end
 
 prior = sum(log(pvar));
