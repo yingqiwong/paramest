@@ -163,6 +163,8 @@ parfor (ins = 1:Ns, NumWorkers)
     end
 end
 
+delete(gcp('nocreate'));
+
 end
 
 function [inds, Lmax] = Lsort (L)
