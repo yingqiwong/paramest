@@ -42,8 +42,7 @@ Nr    = NbrOpts.Nr;
 Niter = NbrOpts.Niter;
 
 if (NbrOpts.Parallel)
-    ParpoolObj = parpool(min([NbrOpts.Ncores,NbrOpts.Ns]));
-    NumWorkers = ParpoolObj.NumWorkers;
+    NumWorkers = min([NbrOpts.Ncores,NbrOpts.Ns]);
 else
     NumWorkers = 0;
 end
@@ -145,6 +144,8 @@ RunTime = nan*ones(Ns,1);
 L       = nan*ones(Ns,1);
 
 mReal = TransformToRealUnits(vNorm, mbnds);
+
+if NumWorkers>0, parpool(NumWorkers); end
 
 parfor (ins = 1:Ns, NumWorkers)
     
