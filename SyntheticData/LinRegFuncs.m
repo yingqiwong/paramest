@@ -3,7 +3,6 @@ function varargout = LinRegFuncs(varargin)
 % data, used to test linear regressions
 % 
 % Ying-Qi Wong, Nov 21, 2019
-
 [varargout{1:nargout}] = feval(varargin{:});
 end
 
