@@ -22,11 +22,10 @@ function [m, dhat, flag, RunTime] = UniformSampling (...
 
 % set parallel for loop options
 if (usOpts.Parallel)
-    NumWorkers = usOpts.Ncores;
+    NumWorkers = usOpts.Ncores; parpool(NumWorkers); 
 else
     NumWorkers = 0;
 end
-
 
 % initialize output matrices
 Nvar    = size(mbnds,1);
@@ -72,6 +71,7 @@ while Nloop < usOpts.Ntot
 end
 
 
+delete(gcp('nocreate'));
 
 
 
