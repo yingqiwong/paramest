@@ -22,7 +22,7 @@ function [m, dhat, flag, RunTime] = UniformSampling (...
 
 % set parallel for loop options
 if (usOpts.Parallel)
-    NumWorkers = usOpts.Ncores; parpool(NumWorkers); 
+    NumWorkers = usOpts.Ncores; 
 else
     NumWorkers = 0;
 end
@@ -50,6 +50,8 @@ end
 % Note nested loops so we can save data after Nit iterations in parfor loop. 
 while Nloop < usOpts.Ntot
     
+    if (usOpts.Parallel), parpool(NumWorkers); end
+    
     parfor (ins = Nloop+(1:usOpts.Nit), NumWorkers)
         df = dhatFunc;
         
@@ -65,6 +67,8 @@ while Nloop < usOpts.Ntot
     save(usOpts.filename, ...
         'Nloop', 'mNames', 'mbnds', 'usOpts', 'm', 'dhat', 'flag', 'RunTime');
     
+    delete(gcp('nocreate'));
+
     % move to next block of runs
     Nloop = Nloop + usOpts.Nit;
     
