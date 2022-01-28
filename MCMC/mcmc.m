@@ -1,4 +1,4 @@
-function [x_keep,P_keep,count] = mcmc(dhatFunc,PriorFunc,LikeFunc,x0,xstep,xbnds,Niter,varargin)
+function [x_keep,P_keep,count] = mcmc(dhatFunc,PriorFunc,LikeFunc,x0,xstep,xbnds,Niter)
 % this function computes Markov Chain Monte Carlo sampling using random walk
 % and Metropolis Hastings. Allows any sort of distribution for prior and
 % likelihood
@@ -12,7 +12,6 @@ function [x_keep,P_keep,count] = mcmc(dhatFunc,PriorFunc,LikeFunc,x0,xstep,xbnds
 % xstep     = step size in all parameter directions (Nvar x 1)
 % xbnds     = Nx2 matrix of lower and upper bounds (can be empty)
 % Niter     = number of iterations
-% varargin  = any other input values for dhatFunc
 % 
 % NB: priorFunc and likeFunc should only take one input each: the model
 % parameter vector and the data vector respectively.
@@ -34,16 +33,16 @@ PriorFunc = fcnchk(PriorFunc);
 LikeFunc  = fcnchk(LikeFunc);
 
 % evaluate first model
-[dhat, dflag, Linputs] = dhatFunc(x1, varargin{:});    
+dhat  = dhatFunc(x1);    
 Px1   = PriorFunc(x1);
-Ld_x1 = LikeFunc(dhat, Linputs);
+Ld_x1 = LikeFunc(dhat);
 Px1_d = Px1 + Ld_x1;
 
 %Initialize the vectors x_keep and L_keep to store the accepted models
 count  = 0;
 x_keep = zeros(Nvar,Niter);
 P_keep = zeros(Niter,1);
-Nprint = floor(Niter/20);
+Nprint = floor(Niter/100);
 
 %Begin loop to perform MCMC
 for i=1:Niter
@@ -64,13 +63,12 @@ for i=1:Niter
     end
     
     %Evaluate forward model for the proposed model x2 that is within bounds
-    [dhat, dflag, Linputs] = dhatFunc(x2, varargin{:});
-    if dflag~=1, continue; end
+    dhat = dhatFunc(x2);
 
     %Evaluate probability of the model given the data using Bayesian
     %approach: P(x2|d)~ L(d|x2) P(x2)
     Px2   = PriorFunc(x2);
-    Ld_x2 = LikeFunc(dhat, Linputs);
+    Ld_x2 = LikeFunc(dhat);
     Px2_d = Px2 + Ld_x2;
 
     %Analyze the acceptance criterion by taking the ratio of the
