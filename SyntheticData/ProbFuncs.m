@@ -63,6 +63,8 @@ end
 
 
 function [L, dhat] = LikeFuncModel (dhatFunc, model, data, sigma)
+% calculates likelihood given input model parameters, basically combining
+% dhatfunc and likefunc
 
 [dhat, flag] = dhatFunc(model);
 

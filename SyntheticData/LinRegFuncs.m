@@ -7,7 +7,7 @@ function varargout = LinRegFuncs(varargin)
 end
 
 function [dhat, flag] = dhatFunc (G, model)
-% [dhat, flag, Linputs] = LinRegFuncs('dhatFunc', G, model)
+% [dhat, flag] = LinRegFuncs('dhatFunc', G, model)
 % 
 % FYI flag is a placeholder values needed for some inversion schemes to
 % show that the model had run successfully
@@ -19,6 +19,8 @@ end
 
 function data = NoisyData (G, model, sigma)
 % data = LinRegFuncs('NoisyData', G, model, sigma)
+% put some noise in the data
+
 
 dhat = dhatFunc(G, model);
 data = dhat + sigma.*randn(size(dhat));
