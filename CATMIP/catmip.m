@@ -39,10 +39,16 @@ beta = 0; c = 0; m = 0;
 
 % start by sampling from the prior distribution
 models  = PriorSampFunc(opts.Niter);
+
+% collect the length of models and data vectors
 Nparam  = size(models,2);
-LLK     = zeros(opts.Niter, 1);              % log likelihood
-dhat    = cell(opts.Niter, opts.Ndatasets);  % predicted data
-RunTime = zeros(opts.Niter, 1);              % collect runtime
+[~, dhattmp] = LikeFunc(models(1,:));
+Ndata = length(dhattmp);
+
+% initialize variables
+LLK     = zeros(opts.Niter, 1);      % log likelihood
+dhat    = zeros(opts.Niter, Ndata);  % predicted data
+RunTime = zeros(opts.Niter, 1);      % collect runtime
 
 % run forward models
 fprintf('Running initial %d models from prior...\n', opts.Niter);
@@ -113,7 +119,7 @@ while beta<1
         
         X       = zeros(opts.Nsteps, Nparam);
         Xllk    = zeros(opts.Nsteps, 1);
-        Xdhat   = cell(opts.Nsteps, opts.Ndatasets);
+        Xdhat   = zeros(opts.Nsteps, Ndata);
         XIOacc  = zeros(opts.Nsteps-1,1);
         
         % Our current sample is the seed for the chain

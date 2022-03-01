@@ -10,7 +10,8 @@ BndsDiff = diff(bnds,[],2);
 VarVary  = find(BndsDiff >0);
 
 voronoi(v(:,VarVary(1)),v(:,VarVary(2))); hold on;
-scatter(v(inds,VarVary(1)),v(inds,VarVary(2)), 40, 1:length(L), 'filled'); 
+scatter(v(inds,VarVary(1)),v(inds,VarVary(2)), 40, length(L):-1:1, 'filled'); 
+
 %colorbar;
 plot(v(EvalInds,VarVary(1)), v(EvalInds,VarVary(2)), 'rx','linewidth',2);
 axis square

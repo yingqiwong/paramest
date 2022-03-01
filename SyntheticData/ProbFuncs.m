@@ -54,22 +54,23 @@ end
 end
 
 
-function L = LikeFunc (dhat, data, sigma, Linputs)
-% L = ProbFuncs('LikeFunc', dhat, data, sigma, Linputs)
+function L = LikeFunc (dhat, data, sigma)
+% L = ProbFuncs('LikeFunc', dhat, data, sigma)
 % assumes normally-distributed errors. 
 % 
-% Linputs is just a placeholder value needed by the Neighborhood algorithm.
-% Not used here.
-
-% L = sum(-log(sigma(:)) - 0.5*log(2*pi) - 0.5*((data(:) - dhat{1}(:))./sigma(:)).^2 );
-L = sum(- 0.5*((data(:) - dhat{1}(:))./sigma(:)).^2 );
+L = sum(- 0.5*((data(:) - dhat(:))./sigma(:)).^2 );
 end
 
 
 function [L, dhat] = LikeFuncModel (dhatFunc, model, data, sigma)
 
-[dhat, flag, Linputs] = dhatFunc(model);
-L = LikeFunc(dhat, data, sigma, Linputs);
+[dhat, flag] = dhatFunc(model);
+
+if flag == 1
+    L = LikeFunc(dhat, data, sigma);
+else
+    L = nan;
+end
 
 end
 

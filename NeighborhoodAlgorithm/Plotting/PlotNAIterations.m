@@ -1,6 +1,6 @@
 function [] = PlotNAIterations (vNorm, mNames, bnds, L, NbrOpts, iterplt)
 
-Nvar = size(vNorm,2);
+[Niter, Nvar] = size(vNorm);
 
 if Nvar == 1, return; end
 if isempty(mNames), mNames = repmat({''}, Nvar, 1); end
@@ -26,6 +26,7 @@ for i = 2:length(iterplt)
     subplot(Nrow,Ncol,i);
     inds = NeighborhoodSearch('Lsort',L(1:IndEnd));
     PlotVoronoi(vNorm(1:IndEnd,:), bnds, L(1:IndEnd), inds(1:Nr));
+    caxis([1,0.2*Niter]);
     
     AddAxes(bnds, mNames);
 end

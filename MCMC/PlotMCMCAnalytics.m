@@ -23,7 +23,7 @@ for mi = 1:Nvar
     if VarVary(mi); xlim(mbnds(mi,:)); end
     title(VarNames{mi});
 end
-suptitle('Posterior PDFs');
+sgtitle('Posterior PDFs');
 
 figure; semilogy(P); 
 title(['Acceptance ratio = ' num2str(100*count/Niter,4)]);

@@ -1,10 +1,13 @@
 function [x_keep,P_keep,count] = mcmc(dhatFunc,PriorFunc,LikeFunc,x0,xstep,xbnds,Niter)
-% this function computes Markov Chain Monte Carlo sampling using random walk
+% 
+% [x_keep,P_keep,count] = mcmc(dhatFunc,PriorFunc,LikeFunc,x0,xstep,xbnds,Niter)
+% 
+% performs Markov Chain Monte Carlo sampling using random walk
 % and Metropolis Hastings. Allows any sort of distribution for prior and
 % likelihood
 % Ying-Qi Wong, 3 Sep 2019
 %
-% Inputs:
+% INPUTS:
 % dhatFunc  = function that predicts data from model params
 % priorFunc = function that evaluates log prior probabilities 
 % likeFunc  = function that calculates log data likelihood
@@ -16,18 +19,19 @@ function [x_keep,P_keep,count] = mcmc(dhatFunc,PriorFunc,LikeFunc,x0,xstep,xbnds
 % NB: priorFunc and likeFunc should only take one input each: the model
 % parameter vector and the data vector respectively.
 %  
-%Outputs:
+% OUTPUTS:
 % x_keep = array of samples (Nvar x Niter)
 % P_keep = posterior distribution
 % count  = number of accepted.  Acceptance ratio is count/Niter
 
 
 %Analyze inputs
-Nvar  = length(x0);        %find number of model parameters
-x1    = x0;                  %set initial guess as first candidate
+Nvar  = length(x0);          % find number of model parameters
+x1    = x0;                  % set initial guess as first candidate
 xstep = xstep(:);
 if isempty(xbnds), xbnds = [-Inf, Inf]; end
 
+% check functions work
 dhatFunc  = fcnchk(dhatFunc);         
 PriorFunc = fcnchk(PriorFunc);
 LikeFunc  = fcnchk(LikeFunc);
@@ -66,24 +70,33 @@ for i=1:Niter
     dhat = dhatFunc(x2);
 
     %Evaluate probability of the model given the data using Bayesian
-    %approach: P(x2|d)~ L(d|x2) P(x2)
+    %approach in log space: 
+    %log P(x2|d) = log P(x2) + log L(d|x2) 
     Px2   = PriorFunc(x2);
     Ld_x2 = LikeFunc(dhat);
     Px2_d = Px2 + Ld_x2;
 
+    %compare posterior probability with previous model
+    P_accept = min((Px2_d-Px1_d),0);
+    
+    %some random number on the interval [0,1]
+    u = log(rand(1));   
+    
     %Analyze the acceptance criterion by taking the ratio of the
     %probability of the proposed model to the previous model and comparing
-    %this probability to a random number between 0 and 1.
-    P_accept = min((Px2_d-Px1_d),0);
-    u = log(rand(1));   %some random number on the interval [0,1]
-    
-    if u<=P_accept          %i.e. the model is accepted
-        x_keep(:,i) = x2;   %store the proposed model and its likelihood
+    %this probability to the random number u between 0 and 1.
+    if u<=P_accept          
+        %i.e. accept model, so store the proposed model and its likelihood
+        x_keep(:,i) = x2;  
         P_keep(i) = Px2_d;
-        x1 = x2;            %assign the accepted model for the next comparison
+        
+        %assign the accepted model for the next comparison
+        x1 = x2;            
         Px1_d = Px2_d;
         count = count+1;
+        
     else
+        %reject this model
         x_keep(:,i) = x1;
         P_keep(i) = Px1_d;
     end
@@ -91,5 +104,5 @@ end
    
 x_keep = x_keep';
 
-fprintf('Acceptance ratio = %.2f.\n', count/length(P_keep));
+fprintf('\n\n Acceptance ratio = %.2f percent.\n\n\n', count/length(P_keep)*100);
 end

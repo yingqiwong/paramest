@@ -11,27 +11,25 @@ function varargout = MogiFuncs(varargin)
 [varargout{1:nargout}] = feval(varargin{:});
 end
 
-function [dhat, flag, Linputs] = dhatFunc (model, r, nu)
+function [dhat, flag] = dhatFunc (model, r, nu)
 % [dhat, flag] = MogiFuncs('dhatFunc', model, r, nu)
 
-dV = (model(1));
-D  = (model(2));
-dhat{1} = 1/pi*(1-nu)*dV*(r./(r.^2 + D^2).^(1.5));
+dV   = (model(1));
+D    = (model(2));
+dhat = 1/pi*(1-nu)*dV*(r./(r.^2 + D^2).^(1.5));
 
 flag = 1;
-Linputs = 0;
 
 end
 
-function [dhat, flag, Linputs] = dhatFunc_exp (model, r, nu)
+function [dhat, flag] = dhatFunc_exp (model, r, nu)
 % [dhat, flag] = MogiFuncs('dhatFunc_exp', model, r, nu)
 
 dV = exp(model(1));
 D  = exp(model(2));
-dhat{1} = 1/pi*(1-nu)*dV*(r./(r.^2 + D^2).^(1.5));
+dhat = 1/pi*(1-nu)*dV*(r./(r.^2 + D^2).^(1.5));
 
 flag = 1;
-Linputs = 0;
 end
 
 function data = NoisyData (model, r, nu, sigma)
@@ -41,5 +39,5 @@ function data = NoisyData (model, r, nu, sigma)
 dhat = dhatFunc(model, r, nu);
 % dhat = dhatFunc_exp(model, r, nu)
 
-data = dhat{1} + sigma*randn(length(r),1);
+data = dhat + sigma*randn(length(r),1);
 end

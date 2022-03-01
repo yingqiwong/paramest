@@ -3,7 +3,7 @@ function varargout = NeighborhoodSearch (varargin)
 end
 
 function [mReal, mNorm, dhat, L, Lmax, flag, RunTime] = main (...
-    dhatFunc, LikeFunc, mbnds, mNames, mIn, NbrOpts, Ndata, varargin)
+    dhatFunc, LikeFunc, mbnds, mNames, mIn, NbrOpts, varargin)
 % evaluates the neighborhood direct search algorithm from Sambridge 1999 I
 % assumes uniform prior - should this part allow different priors?
 %
@@ -22,7 +22,6 @@ function [mReal, mNorm, dhat, L, Lmax, flag, RunTime] = main (...
 %           save      whether to save an output textfile of models
 %           filename  if (save), need to have a filename
 %           Parallel  if want to run models in parallel
-% Ndata     number of datasets (for joint inversions)
 % varargin  any other input values for dhatFunc
 %
 % OUTPUTS
@@ -53,10 +52,16 @@ VarVary     = find(diff(mbnds,[],2)>0);
 ns_adjusted = floor(Ns/Nr)*Nr;  % enforce that this is an integer
 rst_opt     = ~isempty(mIn);    % whether we are trying to restart a run
 
-% initialize matrices
+% calculate model parameters
 mNorm  = ones(Ns + ns_adjusted*Niter, Nvar);
 mReal  = mNorm;
-dhat   = cell(Ns + ns_adjusted*Niter, Ndata);
+
+% calculate one model to extract the size of the data vector
+dhattmp = dhatFunc(mReal(1,:));
+Ndata   = length(dhattmp);
+
+% initialize matrices
+dhat   = zeros(Ns + ns_adjusted*Niter, Ndata);
 L      = nan*ones(Ns + ns_adjusted*Niter, 1);
 Lmax   = nan*ones(1+Niter,1);
 flag   = L;
@@ -138,7 +143,7 @@ function [mReal, dhat, flag, RunTime, L] = RunForwardModel (...
 % transforms new normalized samples to real units and runs the forward
 % model and calculates likelihoods
 
-dhat    = cell(Ns,Ndata);
+dhat    = zeros(Ns,Ndata);
 flag    = nan*ones(Ns,1);
 RunTime = nan*ones(Ns,1);
 L       = nan*ones(Ns,1);
@@ -154,12 +159,12 @@ parfor (ins = 1:Ns, NumWorkers)
     inputs = varargin;
     
     tic;
-    [dhatIter, flag(ins), Linputs] = df(mReal(ins,:), inputs{:});
+    [dhatIter, flag(ins)] = df(mReal(ins,:));
     RunTime(ins) = toc;
     
     if flag(ins)==1
         dhat(ins,:) = dhatIter;
-        L(ins)      = Lf(dhatIter, Linputs);
+        L(ins)      = Lf(dhatIter);
     end
 end
 
