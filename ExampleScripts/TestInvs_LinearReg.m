@@ -95,7 +95,7 @@ tic;
 [m_mcmc,P_mcmc,count] = mcmc(dhatFunc,PriorFunc,LikeFunc,x0,xstep,mbnds,Niter);
 RunTime(1) = toc;
 
-xMAP = PlotMCMCAnalytics(m_mcmc, P_mcmc, mbnds, count, BurnIn, mNames);
+xMAP = PlotMCMCAnalytics(m_mcmc, P_mcmc, [], mbnds, count, BurnIn, mNames);
 [ppd_mcmc.m, ppd_mcmc.prob] = CalcPDF(mbnds, m_mcmc(BurnIn:end,:), Nbins);
 
 %% gwmcmc
