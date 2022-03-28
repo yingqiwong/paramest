@@ -1,8 +1,8 @@
 function [xMAP] = PlotMCMCAnalytics (x, P, x0, xbnds, count, BurnIn, VarNames)
-% 
+%
 % [xMAP] = PlotMCMCAnalytics (x, P, x0, xbnds, count, BurnIn, VarNames)
 % plots the outputs of mcmc inversion
-% 
+%
 % INPUTS
 % x         matrix of model parameters from mcmc [Niter x Nvar]
 % P         vector of posterior probabilities [Niter x 1]
@@ -11,10 +11,10 @@ function [xMAP] = PlotMCMCAnalytics (x, P, x0, xbnds, count, BurnIn, VarNames)
 % count     number of accepted models [scalar]
 % BurnIn    burn in of markov chain [scalar]
 % VarNames  name of variables
-% 
+%
 % OUTPUT
 % xMAP      maximum a posteriori model [1 x Nvar]
-% 
+%
 
 
 [Niter, Nvar] = size(x);
@@ -36,8 +36,8 @@ figure;
 for mi = 1:Nvar
     subplot(Nrow,Ncol,mi);
     
-    % plot the distribution 
-    histogram(x(BurnIn:end,mi), 40);   hold on; 
+    % plot the distribution
+    histogram(x(BurnIn:end,mi), 40, 'EdgeColor', 'none');   hold on;
     
     % bounds
     plot(xbnds(mi,1)*ones(1,2), ylim, 'r-');
@@ -55,8 +55,9 @@ for mi = 1:Nvar
 end
 sgtitle('Posterior PDFs');
 
+
 % plot the chain to see if well mixed
-figure; semilogy(P); 
+figure; semilogy(P);
 title(['Acceptance ratio = ' num2str(100*count/Niter,4)]);
 
 end
