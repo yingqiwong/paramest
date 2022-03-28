@@ -24,7 +24,7 @@ data  = MogiFuncs('NoisyData', mTrue, r, nu, sigma);
 %% bounds of model and define functions
 
 mNames = {'dV','D'};
-mbnds  = [0,5; 0,5];
+mbnds  = [1,3; 1,4];
 
 % function to calculate forward model
 % m --> dhat
@@ -83,31 +83,20 @@ Nbins = min(500,Niter/20);
 %% MCMC
 % adjust step size to get reasonable acceptance ratio ~26%
 
-x0    = mbnds(:,1) + diff(mbnds,[],2).*rand(Nvars,1);
-xstep = 0.015*diff(mbnds,[],2);
+m0     = mbnds(:,1) + diff(mbnds,[],2).*rand(Nvars,1);
+mstep  = 0.03*diff(mbnds,[],2);
 BurnIn = 0.1*Niter;
 
 tic;
-[m_mcmc,P_mcmc,count] = mcmc(dhatFunc,PriorFunc,LikeFunc,x0,xstep,mbnds,Niter);
+[m_mcmc,P_mcmc,count] = mcmc(dhatFunc,PriorFunc,LikeFunc,m0,mstep,mbnds,Niter);
 RunTime(1) = toc;
 
+% plot mcmc outputs
 xMAP = PlotMCMCAnalytics(m_mcmc, P_mcmc, [], mbnds, count, BurnIn, mNames);
+plotcorner(m_mcmc, P_mcmc, m0, mbnds, count, BurnIn, mNames); drawnow;
+
+% retrieve distributions
 [ppd_mcmc.m, ppd_mcmc.prob] = CalcPDF(mbnds, m_mcmc(BurnIn:end,:), Nbins);
-
-%% gwmcmc
-
-
-if isfolder('../../gwmcmc')
-    addpath('../../gwmcmc/');
-    
-    minit = mbnds(:,1) + diff(mbnds,[],2).*rand(Nvars,100);
-    tic
-    [m_gw, p_gw, dhat] =gwmcmc(minit,{PriorFunc LkMdFunc},Niter,'ThinChain',1,'BurnIn',0.2);
-    RunTime(2) = toc;
-    
-    m_gw = m_gw(:,:)'; p_gw = p_gw(:,:)'; dhat = dhat(:,:)';
-    [ppd_gwmc.m, ppd_gwmc.prob] = CalcPDF(mbnds, m_gw, Nbins);
-end
 
 %% catmip
 
@@ -116,8 +105,12 @@ tic
 [m_catmip, p_catmip, dhcm, rtcm, m_catmip_all] = catmip(PrSmpFunc, LkMdFunc, mbnds,...
     'Niter', Niter/Nsteps, 'Nsteps', Nsteps);
 RunTime(3) = toc;
+
+%plot outputs
+PlotTemperingSteps(m_catmip_all, mbnds, mNames); drawnow;
+
+% retrieve distributions
 [ppd_catm.m, ppd_catm.prob] = CalcPDF(mbnds, m_catmip, Nbins);
-PlotTemperingSteps(m_catmip_all, mbnds, mNames)
 
 %% Neighborhood algorithm
 
@@ -136,12 +129,29 @@ nbt = tic;
 
 % appraise
 [~, mOut, mRealOut] = GibbsSampler('main', mNorm, mbnds, L, NbrOpts);
+
+% retrieve distributions
 [ppd_nbrh.m, ppd_nbrh.prob] = CalcPDF(mbnds, mRealOut, Nbins);
 RunTime(4) = toc(nbt);
 
 % plot
 PlotNAIterations(mNorm, mNames, mbnds, L, NbrOpts, 1:2:20)
-AddTrueModelToPlot((mTrue-mbnds(:,1))/diff(mbnds,[],2));
+AddTrueModelToPlot((mTrue-mbnds(:,1))/diff(mbnds,[],2)); drawnow;
+
+%% gwmcmc
+
+if isfolder('../../gwmcmc')
+    addpath('../../gwmcmc/');
+    
+    minit = mbnds(:,1) + diff(mbnds,[],2).*rand(Nvars,100);
+    tic
+    [m_gw, p_gw, dhat] =gwmcmc(minit,{PriorFunc LkMdFunc},Niter,'ThinChain',1,'BurnIn',0.2);
+    RunTime(2) = toc;
+    
+    % retrieve distributions
+    m_gw = m_gw(:,:)'; p_gw = p_gw(:,:)'; dhat = dhat(:,:)';
+    [ppd_gwmc.m, ppd_gwmc.prob] = CalcPDF(mbnds, m_gw, Nbins);
+end
 
 %% compare pdfs of all the schemes
 
@@ -149,18 +159,22 @@ disp(RunTime);
 
 figure;
 set(gcf,'defaultlinelinewidth', 2, 'Position', [500,600,1000,500]);
+colors = lines(4);
 
 for mi = 1:Nvars
     subplot(1,Nvars,mi);
-    plot(mTrue(mi)); hold on;
-    plot(ppd_mcmc.m(:,mi), ppd_mcmc.prob(:,mi)); 
-    plot(ppd_gwmc.m(:,mi), ppd_gwmc.prob(:,mi));
-    plot(ppd_catm.m(:,mi), ppd_catm.prob(:,mi));
-    plot(ppd_nbrh.m(:,mi), ppd_nbrh.prob(:,mi));
-    plot(mTrue(mi)*ones(1,2), ylim, 'k-');
+    plot(mTrue(mi)*ones(1,2), [0,1.1*max(ppd_mcmc.prob(:,mi))], 'k-');
+    hold on;
+    plot(ppd_mcmc.m(:,mi), ppd_mcmc.prob(:,mi), 'Color', colors(1,:));
+    plot(ppd_catm.m(:,mi), ppd_catm.prob(:,mi), 'Color', colors(2,:));
+    plot(ppd_nbrh.m(:,mi), ppd_nbrh.prob(:,mi), 'Color', colors(3,:));
+    
+    if isfolder('../../gwmcmc')
+        plot(ppd_gwmc.m(:,mi), ppd_gwmc.prob(:,mi), 'Color', colors(4,:));
+    end
     hold off;
     
-    leg = legend('','MCMC','GWMCMC','CATMIP','NBR','True','location','southoutside');
+    leg = legend('True','MCMC','CATMIP','NBR','GWMCMC','location','southoutside');
     legend boxoff
     title(leg, 'Inversion method');
     
