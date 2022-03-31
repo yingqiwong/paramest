@@ -1,6 +1,6 @@
 function [xMAP] = plotcorner (x, P, x0, xbnds, count, BurnIn, VarNames)
 %
-% [xMAP] = PlotMCMCAnalytics (x, P, x0, xbnds, count, BurnIn, VarNames)
+% [xMAP] = plotcorner (x, P, x0, xbnds, count, BurnIn, VarNames)
 % plots the outputs of mcmc inversion
 %
 % INPUTS
@@ -30,7 +30,7 @@ if isempty(x0), x0 = x(1,:); end
 figure;
 figpos = get(0,'ScreenSize');
 set(gcf,'Position',[figpos(1),100,0.8*figpos(3),0.85*figpos(4)]);
-hAx = tight_subplot(Nvar,Nvar,0,0.04,0.02);
+hAx = tight_subplot(Nvar,Nvar,0,0.04,0.04);
 
 for mi = 1:Nvar
     for ni = 1:Nvar
@@ -57,7 +57,14 @@ for mi = 1:Nvar
             
         elseif mi<ni
             dscatter(x(BurnIn:end,ni), x(BurnIn:end,mi),'plottype','contour');
-            set(gca,'XTickLabel',[],'YTickLabel',[]);
+            set(gca,'XTickLabel',[]);
+            if VarVary(ni); xlim(xbnds(ni,:)); end
+            if VarVary(mi); ylim(xbnds(mi,:)); end
+            if ni==Nvar
+                set(gca,'YAxisLocation','right'); 
+            else
+                set(gca,'YTickLabel',[]);
+            end
         else
             set(gca,'visible', 'off');
         end

@@ -57,7 +57,8 @@ sgtitle('Posterior PDFs');
 
 
 % plot the chain to see if well mixed
-figure; semilogy(P);
+figure; 
+plot(P);
 title(['Acceptance ratio = ' num2str(100*count/Niter,4)]);
 
 end
