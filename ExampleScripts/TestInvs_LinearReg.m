@@ -95,7 +95,7 @@ tic;
 RunTime(1) = toc;
 
 % plot mcmc outputs
-xMAP = PlotMCMCAnalytics(m_mcmc, P_mcmc, [], mbnds, count, BurnIn, mNames);
+xMAP = plotmcmc(m_mcmc, P_mcmc, [], mbnds, count, BurnIn, mNames);
 plotcorner(m_mcmc, P_mcmc, m0, mbnds, count, BurnIn, mNames); drawnow;
 
 % retrieve distributions
