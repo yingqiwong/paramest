@@ -37,7 +37,7 @@ for mi = 1:Nvar
     subplot(Nrow,Ncol,mi);
     
     % plot the distribution
-    histogram(x(BurnIn:end,mi), 40, 'EdgeColor', 'none');   hold on;
+    histogram(x(BurnIn:end,mi), 100, 'EdgeColor', 'none');   hold on;
     
     % bounds
     plot(xbnds(mi,1)*ones(1,2), ylim, 'r-');
