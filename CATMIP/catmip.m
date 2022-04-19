@@ -23,7 +23,7 @@ function [models, LLK, dhat, RunTime, allmodels] = catmip (PriorSampFunc, LikeFu
 % 
 
 % parse options
-opts = default_opts(varargin{:});
+opts  = default_opts(varargin{:});
 Cmsqr = opts.Cmsqr;
 dbeta = opts.dbeta;
 
@@ -33,6 +33,12 @@ if (opts.Parallel)
 else
     NumWorkers = 0;
 end
+
+% preassign some variables to avoid broadcast variables in parfor loop
+Nsteps     = opts.Nsteps;
+Ndatasets  = opts.Ndatasets;
+lowerbound = mbnds(:,1);
+upperbound = mbnds(:,2);
 
 % set initial tempering values
 beta = 0; c = 0; m = 0;
@@ -50,6 +56,7 @@ LLK     = zeros(opts.Niter, 1);      % log likelihood
 dhat    = zeros(opts.Niter, Ndata);  % predicted data
 RunTime = zeros(opts.Niter, 1);      % collect runtime
 
+
 % run forward models
 fprintf('Running initial %d models from prior...\n', opts.Niter);
 parfor (mi = 1:opts.Niter, NumWorkers)
@@ -61,7 +68,9 @@ fprintf('Finished initial %d models from prior. Time taken = %.4f hours.\n\n',..
     opts.Niter, sum(RunTime)/3600);
 
 fprintf('m\tCm^2\tCOV\tbeta\t\tNaccept\t\tNreject\n');
-fprintf('%d\t%.4f\t%.4f\t%.4f\t%.4e\t%.4e\n',m,Cmsqr,c,beta,0,0);
+fprintf('----------------------------------');
+fprintf('----------------------------------\n');
+fprintf('%d\t%.4f\t%.4f\t%.2e\t%.4e\t%.4e\n',m,Cmsqr,c,beta,0,0);
 
 if (opts.SaveFile)
     save(opts.FileName, 'models', 'LLK', 'dhat', 'beta', 'RunTime');
@@ -78,13 +87,12 @@ while beta<1
     % update temperature
     [w,beta,dbeta,c] = calc_beta(LLK,beta,dbeta);
     
-    fprintf('m\tCm^2\tCOV\tbeta\t\tNaccept\t\tNreject\n');
     fprintf('%d\t%.4f\t%.4f\t%.2e\t',m,Cmsqr,c,beta);
     
     % Resample to match new PriorFunc PDF
-    count = histc(rand([opts.Niter 1]),[0; cumsum(w)]);
+    count       = histcounts(rand([opts.Niter 1]),[0; cumsum(w)]);
     count(end-1)=sum(count(end-1:end));
-    count = count(1:end-1);
+    count       = count(1:end-1);
     
     ind = []; 
     for i=1:length(count)
@@ -117,19 +125,19 @@ while beta<1
     % Loop over samples: each sample is the seed for a Markov chain
     parfor (ii = 1:opts.Niter, NumWorkers)
         
-        X       = zeros(opts.Nsteps, Nparam);
-        Xllk    = zeros(opts.Nsteps, 1);
-        Xdhat   = zeros(opts.Nsteps, Ndata);
-        XIOacc  = zeros(opts.Nsteps-1,1);
+        X       = zeros(Nsteps  , Nparam);
+        Xllk    = zeros(Nsteps  , 1     );
+        Xdhat   = zeros(Nsteps  , Ndata );
+        XIOacc  = zeros(Nsteps-1, 1     );
         
         % Our current sample is the seed for the chain
-        X(1,:)      = models(ii,:); 
+        X(1,:)      = models(ii,:);
         Xllk(1)     = LLK(ii);
         Xdhat(1,:)  = dhat(ii,:);
-        z           = mvnrnd(zeros(1,Nparam), Sm, opts.Nsteps);
+        z           = mvnrnd(zeros(1,Nparam), Sm, Nsteps);
         
         % Run Metropolis
-        for k=1:opts.Nsteps-1 
+        for k=1:Nsteps-1 
             % current step
             x   = X(k,:);
             px  = Xllk(k);
@@ -137,11 +145,11 @@ while beta<1
             % proposed step
             y   = X(k,:) + z(k,:);
             
-            if all(y(:)>=mbnds(:,1)) && all(y(:)<=mbnds(:,2))
+            if all(y(:)>=lowerbound) && all(y(:)<=upperbound)
                 [py,dy] = LikeFunc(y);
             else
                 py = -1e10;
-                dy = cell(1,opts.Ndatasets);
+                dy = cell(1,Ndatasets);
             end
             
             % compare posterior probabilities
@@ -188,7 +196,7 @@ while beta<1
         save(opts.FileName, 'models', 'allmodelstmp', 'LLK', 'dhat', 'beta', 'RunTime');
     end
     
-    if (1-beta < 0.005); fprintf('mstop=%d\n',m); mstop=m; break; end
+    if (1-beta < 0.005); fprintf('mstop=%d\n',m); break; end
     
 end
 
@@ -230,12 +238,12 @@ end
 beta    = beta + dbeta2;
 
 w = calc_w(dbeta2, LLK);
-c = nanstd(w)/nanmean(w);
+c = std(w,'omitnan')/mean(w,'omitnan');
 end
 
 function c = calc_c (dbeta, LLK)
 w = calc_w(dbeta, LLK);
-c = nanstd(w)/nanmean(w);
+c = std(w,'omitnan')/mean(w,'omitnan');
 end
 
 function w = calc_w (dbeta, LLK)
