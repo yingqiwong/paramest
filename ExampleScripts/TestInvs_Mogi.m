@@ -6,7 +6,7 @@
 clear all; close all;
 addpath(genpath('../'));
 set(0,'defaultlinelinewidth',2);
-rng(16);
+rng(16);    % for reproducibility
 
 %% generate true model
 
@@ -32,11 +32,11 @@ dhatFunc  = @(model) MogiFuncs('dhatFunc', model,r,nu);
 
 % function to calculate prior probability given a set of model param values
 % m --> prior prob
-PriorFunc = @(model) ProbFuncs('PriorFunc',model,mbnds,[],'Uniform');
+PriorFunc = @(model) ProbFuncs('PriorFunc',model,mbnds,'uniform');
 
 % function to sample from the prior probability distributionn
 % [] --> set of model parameter values [Niter x Nm]
-PrSmpFunc = @(Niter) ProbFuncs('PriorSampFunc', 'Uniform', Niter, mbnds);
+PrSmpFunc = @(Niter) ProbFuncs('PriorSampFunc', Niter, mbnds, 'uniform');
 
 % function to calculate likelihood of dhat
 % dhat --> likelihood

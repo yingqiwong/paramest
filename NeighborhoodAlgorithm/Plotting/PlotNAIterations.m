@@ -13,7 +13,7 @@ ScreenSize = get(0,'ScreenSize');
 
 [Nrow, Ncol] = GetSubplotRowCol(length(iterplt));
 
-figure;
+nafig = figure;
 set(gcf,'Position',[100,100,0.8*ScreenSize(3:4)]);
 
 subplot(Nrow,Ncol,1);
@@ -23,6 +23,7 @@ PlotVoronoi(vNorm(1:Ns,:), bnds, L(1:Ns), inds(1:Nr));
 for i = 2:length(iterplt)
     IndEnd = Ns + (iterplt(i)-1)*floor(Ns/Nr)*Nr;
    
+    figure(nafig);
     subplot(Nrow,Ncol,i);
     inds = NeighborhoodSearch('Lsort',L(1:IndEnd));
     PlotVoronoi(vNorm(1:IndEnd,:), bnds, L(1:IndEnd), inds(1:Nr));

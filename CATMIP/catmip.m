@@ -103,7 +103,8 @@ while beta<1
     
     
     
-    % now update samples using a Metropolis chain to explore model space.
+    % now update samples using a Metropolis chain to explore model space
+    % using a Gaussian proposal density with covariance Sm (to make z below)
     % PROCEDURE:
     % 1. Calculate p=w/sum(w)
     % 2. Calculate the expected value: E = sum(p_i*models_i)

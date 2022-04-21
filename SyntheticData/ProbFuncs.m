@@ -8,23 +8,27 @@ function varargout = ProbFuncs(varargin)
 end
 
 
-function [prior, junk] = PriorFunc (model, mu, sigma, distrib)
-% prior = ProbFuncs('PriorFunc', model, mu, sigma, distrib)
-
-model = model(:); % just to make sure that model is Nvar x 1
-Nvar = length(model);
-
-pvar = zeros(size(model));
+function [prior, junk] = PriorFunc (model, mdef, distrib)
+% 
+% prior = ProbFuncs('PriorFunc', model, mdef, distrib)
+% 
+% returns the log - prior probability of a model
+% mdef is the matrix of parameters needed to define the prior distribution
+% definition below, depends on distrib
 
 switch distrib
-    case 'Normal'
-        % here mu = mean (Nvar x 1), sigma = standard deviation (Nvar x 1)
-        for ivar = 1:Nvar
-            pvar(ivar) = normalPrior(model(ivar), mu(ivar), sigma(ivar));
-        end
-    case 'Uniform'
-        % here mu = bounds (Nvar x 1)
-        pvar = double(model>=mu(:,1) & model<=mu(:,2));
+    case 'normal'
+        % mdef = [mu, sigma]; size Nvar x 2
+        mu    = mdef(:,1);
+        sigma = mdef(:,2);
+        pvar  = normpdf(model(:), mu, sigma);
+        
+    case 'uniform'
+        % mdef = [lower, upper]; size Nvar x 2
+        lower = mdef(:,1);
+        upper = mdef(:,2);
+        pvar  = double(model(:)>=lower & model(:)<=upper);
+        
 end
 
 prior = sum(log(pvar));
@@ -32,24 +36,29 @@ prior = sum(log(pvar));
 junk  = nan; % pointless output that is needed for gwmcmc
 end
 
-function [models] = PriorSampFunc (distrib, Niter, mdef)
-% samples from the prior distribution - either a normal or uniform
-% distribution.
-% mdef is size (Nvar x 2 - 2 parameters needed to define the distribution)
-
-Nvar = size(mdef,1);
+function [models] = PriorSampFunc (Niter, mdef, distrib)
+% 
+% [models] = PriorSampFunc (Niter, mdef, distrib)
+% 
+% samples from the prior distribution 
+% mdef is the matrix of parameters needed to define the prior distribution
+% definition below, depends on distrib
 
 switch distrib
-    case 'Normal'
-        mu  = repmat(mdef(:,1)', Niter, 1);
-        sig = repmat(mdef(:,2)', Niter, 1);
-        models = normrnd(mu, sig);
+    case 'normal'
+        % mdef = [mu, sigma]; size Nvar x 2
+        mu     = mdef(:,1);
+        sigma  = mdef(:,2);
+        models = mu +  sigma.*randn(length(sigma),Niter);
         
-    case 'Uniform'
-        lower = repmat(mdef(:,1)', Niter, 1);
-        upper = repmat(mdef(:,2)', Niter, 1);
-        models = unifrnd(lower, upper);
+    case 'uniform'
+        % mdef = [lower, upper]; size Nvar x 2
+        lower  = mdef(:,1);
+        upper  = mdef(:,2);
+        models = lower + (upper-lower).*rand(length(lower),Niter);
 end
+
+models = models'; % the output size has to be Niter x Nvar
 
 end
 
