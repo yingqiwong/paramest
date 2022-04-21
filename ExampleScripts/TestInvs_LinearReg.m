@@ -81,7 +81,7 @@ drawnow;
 %% NOW, test different inversion schemes
 % establish some common traits so that we can compare the methods
 
-Niter = 100000;
+Niter = 1000000;
 Nbins = min(500,Niter/20);
 
 %% run MCMC
@@ -106,7 +106,7 @@ plotcorner(m_mcmc, P_mcmc, m0, mbnds, count, BurnIn, mNames); drawnow;
 Nsteps = 20; % number of tempering steps
 
 cmt = tic;
-[m_catmip, p_catmip, dhcm, rtcm, m_catmip_all] = catmip(PrSmpFunc, LkMdFunc, mbnds, 'Niter', Niter/Nsteps, 'Nsteps', Nsteps);
+[m_catmip, p_catmip, dhcm, rtcm, m_catmip_all] = catmip(PriorFunc, PrSmpFunc, LkMdFunc, 'Niter', Niter/Nsteps, 'Nsteps', Nsteps);
 RunTime(3) = toc(cmt);
 
 % plot outputs
@@ -139,7 +139,7 @@ RunTime(4) = toc(nbt);
 
 % plot
 PlotNAIterations(mNorm, mNames, mbnds, L, NbrOpts, 1:2:20)
-AddTrueModelToPlot((mTrue-mbnds(:,1))/diff(mbnds,[],2)); drawnow;
+AddTrueModelToPlot((mTrue-mbnds(:,1))./diff(mbnds,[],2)); drawnow;
 
 %% gwmcmc
 

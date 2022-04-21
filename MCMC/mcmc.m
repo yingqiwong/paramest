@@ -48,6 +48,7 @@ x_keep = zeros(Nvar,Niter);
 P_keep = zeros(Niter,1);
 Nprint = floor(Niter/100);
 
+fprintf(1,'\n\nRunning MCMC...\n\n');
 progressbar('_start');
 
 

@@ -102,8 +102,8 @@ plotcorner(m_mcmc, P_mcmc, m0, mbnds, count, BurnIn, mNames); drawnow;
 
 Nsteps = 20;    % number of tempering steps
 tic
-[m_catmip, p_catmip, dhcm, rtcm, m_catmip_all] = catmip(PrSmpFunc, LkMdFunc, mbnds,...
-    'Niter', Niter/Nsteps, 'Nsteps', Nsteps);
+[m_catmip, p_catmip, dhcm, rtcm, m_catmip_all] = catmip(PriorFunc, PrSmpFunc, LkMdFunc, 'Niter', Niter/Nsteps, 'Nsteps', Nsteps);
+
 RunTime(3) = toc;
 
 %plot outputs
@@ -136,7 +136,7 @@ RunTime(4) = toc(nbt);
 
 % plot
 PlotNAIterations(mNorm, mNames, mbnds, L, NbrOpts, 1:2:20)
-AddTrueModelToPlot((mTrue-mbnds(:,1))/diff(mbnds,[],2)); drawnow;
+AddTrueModelToPlot((mTrue-mbnds(:,1))./diff(mbnds,[],2)); drawnow;
 
 %% gwmcmc
 
