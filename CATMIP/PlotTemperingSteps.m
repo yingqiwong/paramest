@@ -9,7 +9,7 @@ function [] = PlotTemperingSteps (allmodels, mbnds, mNames)
 if nargin<3, mNames = repmat({''}, Nvar, 1); end
 
 figure;
-set(gcf,'defaultlinelinewidth', 2, 'defaultaxescolororder', parula(Ntemp+1));
+set(gcf,'defaultlinelinewidth', 1, 'defaultaxescolororder', parula(Ntemp+1));
 [Nrow, Ncol] = GetSubplotRowCol(Nvar);
 
 for vi = 1:Nvar
